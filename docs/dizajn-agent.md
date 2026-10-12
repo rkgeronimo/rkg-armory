@@ -1,6 +1,6 @@
 # Dizajn za agente
 
-Primijenjeni izgled aplikacije. Boje žive u `app/src/main/java/hr/gearmory/app/ui/theme/Theme.kt`. Ovaj file kaže kad koju uzeti.
+Primijenjeni izgled aplikacije. Boje žive u `app/src/main/java/hr/rkgarmory/app/ui/theme/Theme.kt`. Ovaj file kaže kad koju uzeti.
 
 `docs/dizajn.md` je stari Lovable uzor (tirkiz, `ocean-shell`). Za boje, traku, kućicu i karticu slijedi ovaj file.
 

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # UI colors
 
-Tokens live in `app/src/main/java/hr/gearmory/app/ui/theme/Theme.kt`. Page content background is `surfaceVariant`. Anything that uses `surfaceVariant` on that page disappears.
+Tokens live in `app/src/main/java/hr/rkgarmory/app/ui/theme/Theme.kt`. Page content background is `surfaceVariant`. Anything that uses `surfaceVariant` on that page disappears.
 
 - Page content: `surfaceVariant`.
 - Cards, inputs, unselected chips and buttons: `surface`, elevation `1.dp`, text `onSurface`.

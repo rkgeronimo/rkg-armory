@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "hr.gearmory.app"
+    namespace = "hr.rkgarmory.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "hr.gearmory.app"
+        applicationId = "hr.rkgarmory.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

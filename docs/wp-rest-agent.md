@@ -69,7 +69,7 @@ Application password se ne može spremiti u git. U PR dodaj WP-CLI naredbu koju 
 
 `wp rkg tablet-auth`
 
-Naredba nađe korisnika `tablet`, napravi application password imena `ge-armory` i ispiše ga. Ako `ge-armory` već postoji, ne radi novi i ne ispisuje stari.
+Naredba nađe korisnika `tablet`, napravi application password imena `rkg-armory` i ispiše ga. Ako `rkg-armory` već postoji, ne radi novi i ne ispisuje stari.
 
 ## Gotovo kad
 
