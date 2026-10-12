@@ -1,0 +1,10 @@
+---
+description: User builds and runs the Android app in Android Studio
+alwaysApply: true
+---
+
+# Android Studio
+
+The user has Android Studio and runs the app there.
+
+Do not start Gradle, `gradlew`, or an Android build or install. Do not download a Gradle distribution. After code changes, leave compile and run to the user.

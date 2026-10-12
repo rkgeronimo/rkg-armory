@@ -1,0 +1,20 @@
+---
+description: Screen colors so controls stay visible on the gray page
+alwaysApply: true
+---
+
+# UI colors
+
+Tokens live in `app/src/main/java/hr/gearmory/app/ui/theme/Theme.kt`. Page content background is `surfaceVariant`. Anything that uses `surfaceVariant` on that page disappears.
+
+- Page content: `surfaceVariant`.
+- Cards, inputs, unselected chips and buttons: `surface`, elevation `1.dp`, text `onSurface`.
+- Selected chip or row: `primary` / `onPrimary`.
+- Table and list headers: `primaryContainer`, text `onSurfaceVariant`. Never `surfaceVariant`.
+- Navigation rail and drawer: `surface`. Selected item in light theme: `primaryContainer`. In dark theme: `#334155`.
+- `OutlinedTextField` container, focused, unfocused, and disabled: `surface`.
+- Disabled button: `surface` and `onSurfaceVariant`, not the default gray.
+- Odustani: `secondary`. Spremi and the main action: `primary`. Briši: `error`.
+- Dividers and card borders: `outlineVariant`.
+
+Before finishing a screen, check every control that sits on `surfaceVariant`. If its fill is `surfaceVariant`, transparent, or the Material default, change it to `surface`.
