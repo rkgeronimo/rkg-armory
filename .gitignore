@@ -7,3 +7,8 @@ captures/
 .externalNativeBuild/
 .cxx/
 app/build/
+
+# Release signing (keep out of git)
+keystore.properties
+*.jks
+*.keystore
