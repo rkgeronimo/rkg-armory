@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +60,7 @@ private const val EquipmentPageSize = 40
 @Composable
 internal fun EquipmentScreen() {
     val viewModel: EquipmentViewModel = viewModel()
+    val phone = LocalConfiguration.current.smallestScreenWidthDp < 600
     var query by rememberSaveable { mutableStateOf("") }
     var statusFilter by rememberSaveable { mutableStateOf("Sve") }
     var typeFilter by rememberSaveable { mutableStateOf("Sve") }
@@ -183,14 +185,23 @@ internal fun EquipmentScreen() {
                 )
             }
         } else {
-            PieceTable(
-                pieces = shown,
-                onOpen = { editingId = it },
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-            )
+            val listModifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+            if (phone) {
+                PieceCards(
+                    pieces = shown,
+                    onOpen = { editingId = it },
+                    modifier = listModifier,
+                )
+            } else {
+                PieceTable(
+                    pieces = shown,
+                    onOpen = { editingId = it },
+                    modifier = listModifier,
+                )
+            }
             if (pageAll && pageCount > 1) {
                 PageBar(
                     page = safePage,
@@ -256,6 +267,90 @@ private fun PieceTable(
 }
 
 @Composable
+private fun PieceCards(
+    pieces: List<Piece>,
+    onOpen: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        pieces.forEach { piece ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 96.dp)
+                    .clickable { onOpen(piece.id) },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CardLabel("Šifra")
+                        CardValue(piece.code)
+                        Text(
+                            text = piece.type,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 12.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        StatusPill(piece.status)
+                    }
+                    Row {
+                        CardLabel("Veličina")
+                        CardValue(piece.size.ifBlank { pieceSize(piece.type, piece.code) })
+                    }
+                    if (piece.status == StatusIssuedLabel) {
+                        CardValue(
+                            listOf(piece.holder.orEmpty(), piece.issuedOn.orEmpty())
+                                .filter { it.isNotBlank() }
+                                .joinToString(" · "),
+                        )
+                    }
+                    if (piece.note.isNotBlank()) {
+                        Text(
+                            text = piece.note,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardLabel(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier.padding(end = 8.dp),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun CardValue(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.Medium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+@Composable
 private fun TableRow(
     code: String,
     type: String,
@@ -306,7 +401,7 @@ private fun TableRow(
 }
 
 @Composable
-private fun PageBar(
+internal fun PageBar(
     page: Int,
     pageCount: Int,
     onPage: (Int) -> Unit,

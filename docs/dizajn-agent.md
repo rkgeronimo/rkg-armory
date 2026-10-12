@@ -32,7 +32,7 @@ Označena stavka trake u tamnoj temi: `#334155`.
 
 Pejzaž: fiksna lijevo, 220dp. Portret: hamburger otvara isti panel kao modal, širina 240dp.
 
-Redoslijed: Početna, Izdavanje, Razduživanje, Oprema, Inventura. Stavka 72dp. Dno: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
+Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka 72dp. Dno: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
 
 Tema stoji na traci.
 

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
@@ -51,10 +52,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hr.rkgarmory.app.feature.reservations.donationText
 import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.remote.ReservedPiece
 import hr.rkgarmory.app.remote.openPieces
@@ -76,6 +79,9 @@ internal fun ReturnsScreen(openId: Long? = null) {
     val selected = shown.firstOrNull { it.id == pickedId }
     val pieces = selected?.openPieces().orEmpty()
     val marked = pieces.any { viewModel.marks["${selected?.id}:${it.first}"] != null }
+    val savedDonation = donationText(selected?.donationAmount)
+    var donation by rememberSaveable(selected?.id, savedDonation) { mutableStateOf(savedDonation) }
+    val newDonation = donation.trim().takeIf { it != savedDonation }
 
     LaunchedEffect(Unit) {
         viewModel.reload()
@@ -262,6 +268,9 @@ internal fun ReturnsScreen(openId: Long? = null) {
                     pieces = pieces,
                     marks = viewModel.marks,
                     onMark = viewModel::mark,
+                    donation = donation,
+                    onDonation = { donation = it },
+                    enabled = !viewModel.saving,
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(
@@ -289,11 +298,11 @@ internal fun ReturnsScreen(openId: Long? = null) {
                     Button(
                         onClick = {
                             if (viewModel.saving) return@Button
-                            viewModel.save(selected.id) { stillOpen ->
+                            viewModel.save(selected.id, newDonation) { stillOpen ->
                                 if (!stillOpen) close()
                             }
                         },
-                        enabled = marked || viewModel.saving,
+                        enabled = marked || newDonation != null || viewModel.saving,
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp),
@@ -330,6 +339,9 @@ private fun HeldPiecesCard(
     pieces: List<Pair<String, ReservedPiece>>,
     marks: Map<String, Int>,
     onMark: (Long, String, Int) -> Unit,
+    donation: String,
+    onDonation: (String) -> Unit,
+    enabled: Boolean,
 ) {
     Card(
         modifier = Modifier
@@ -390,6 +402,39 @@ private fun HeldPiecesCard(
                     )
                     Spacer(Modifier.width(8.dp))
                 }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Donacija",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
+                OutlinedTextField(
+                    value = donation,
+                    onValueChange = { typed ->
+                        onDonation(typed.filter { it.isDigit() || it == ',' || it == '.' }.take(10))
+                    },
+                    enabled = enabled,
+                    modifier = Modifier
+                        .width(168.dp)
+                        .height(56.dp),
+                    singleLine = true,
+                    suffix = { Text("€") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
             }
         }
     }

@@ -45,6 +45,7 @@ import hr.rkgarmory.app.feature.home.HomeScreen
 import hr.rkgarmory.app.feature.inventory.InventoryPopisScreen
 import hr.rkgarmory.app.feature.inventory.InventoryScreen
 import hr.rkgarmory.app.feature.issuance.IssuanceScreen
+import hr.rkgarmory.app.feature.reservations.ReservationsScreen
 import hr.rkgarmory.app.feature.returns.ReturnsScreen
 import kotlinx.coroutines.launch
 
@@ -210,6 +211,7 @@ private fun ShellContent(
             )
             Destination.Issuance -> IssuanceScreen(openId = openReservationId)
             Destination.Returns -> ReturnsScreen(openId = openReservationId)
+            Destination.Reservations -> ReservationsScreen()
             Destination.Equipment -> EquipmentScreen()
             Destination.Inventory -> InventoryScreen()
             Destination.InventoryPopis -> InventoryPopisScreen()
@@ -221,4 +223,6 @@ private val phoneDestinations = listOf(
     Destination.Home,
     Destination.Issuance,
     Destination.Returns,
+    Destination.Reservations,
+    Destination.Equipment,
 )

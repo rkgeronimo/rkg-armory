@@ -70,6 +70,8 @@ internal data class Reservation(
     val excursion: String?,
     val state: Int,
     val status: String,
+    val archived: Boolean,
+    val donationAmount: Double?,
     val comment: String?,
     val equipment: Map<String, ReservedPiece>,
 )
@@ -84,7 +86,8 @@ internal fun reservationNotice(error: Throwable): String = when (error) {
     is ReservationException -> when (error.code) {
         "rkg_forbidden" -> "Nema ovlasti."
         "rkg_invalid_return" -> "Oznaka nije valjana."
-        "rkg_not_found" -> "Zahtjev nije pronađen."
+        "rkg_not_found", "rkg_deleted" -> "Zahtjev nije pronađen."
+        "rkg_invalid_donation" -> "Iznos donacije nije valjan."
         "rkg_invalid" -> "Korisnik nije valjan."
         "rkg_unavailable" -> unavailableNotice(error)
         else -> "Stranica nije odgovorila."
@@ -146,10 +149,71 @@ internal data class InventoryPiece(
     val note: String?,
 )
 
+private const val ListPageSize = 200
+private const val ListMaxPages = 25
+
 internal object ReservationClient {
     fun listActive(credentials: StaffCredentials): List<Reservation> = list(credentials, 1)
 
     fun listPending(credentials: StaffCredentials): List<Reservation> = list(credentials, 0)
+
+    /** Every reservation that is not archived or deleted, newest first. */
+    fun listAll(credentials: StaffCredentials): List<Reservation> {
+        val all = mutableListOf<Reservation>()
+        for (page in 1..ListMaxPages) {
+            val body = call(
+                credentials,
+                "GET",
+                "/reservations?per_page=$ListPageSize&page=$page",
+                null,
+            )
+            val array = JSONArray(body)
+            for (index in 0 until array.length()) {
+                all += parseReservation(array.getJSONObject(index))
+            }
+            if (array.length() < ListPageSize) break
+        }
+        return all
+    }
+
+    /**
+     * Saves an edit. Only the given values are sent. [donation] null keeps
+     * the stored amount, blank clears it.
+     */
+    fun updateReservation(
+        credentials: StaffCredentials,
+        id: Long,
+        codeByKey: Map<String, String>,
+        returnedByKey: Map<String, Int>,
+        comment: String?,
+        donation: String?,
+    ): Reservation {
+        val equipment = JSONObject()
+        equipmentKeys.forEach { key ->
+            val piece = JSONObject()
+            codeByKey[key]?.takeIf { it.isNotBlank() }?.let { piece.put("code", it) }
+            returnedByKey[key]?.takeIf { it in setOf(0, 1, 3) }?.let { piece.put("returned", it) }
+            if (piece.length() > 0) equipment.put(key, piece)
+        }
+        val body = JSONObject()
+        if (equipment.length() > 0) body.put("equipment", equipment)
+        if (!comment.isNullOrBlank()) body.put("other", comment)
+        if (donation != null) {
+            body.put("donation_amount", if (donation.isBlank()) JSONObject.NULL else donation)
+        }
+        val text = call(credentials, "POST", "/reservations/$id", body.toString())
+        return parseReservation(JSONObject(text))
+    }
+
+    fun archive(credentials: StaffCredentials, id: Long): Reservation {
+        val text = call(
+            credentials,
+            "POST",
+            "/reservations/$id/archive",
+            JSONObject().put("archived", true).toString(),
+        )
+        return parseReservation(JSONObject(text))
+    }
 
     fun listUsers(credentials: StaffCredentials): List<StaffUser> {
         val body = call(credentials, "GET", "/users", null)
@@ -218,17 +282,22 @@ internal object ReservationClient {
         credentials: StaffCredentials,
         id: Long,
         returnedByKey: Map<String, Int>,
+        donation: String? = null,
     ): Reservation {
         val equipment = JSONObject()
         returnedByKey.forEach { (key, returned) ->
             if (key !in equipmentKeys || returned !in setOf(0, 1, 3)) return@forEach
             equipment.put(key, JSONObject().put("returned", returned))
         }
+        val json = JSONObject().put("equipment", equipment)
+        if (donation != null) {
+            json.put("donation_amount", if (donation.isBlank()) JSONObject.NULL else donation)
+        }
         val body = call(
             credentials,
             "POST",
             "/reservations/$id",
-            JSONObject().put("equipment", equipment).toString(),
+            json.toString(),
         )
         return parseReservation(JSONObject(body))
     }
@@ -332,6 +401,12 @@ internal object ReservationClient {
             excursion = json.optNullableString("excursion"),
             state = json.getInt("state"),
             status = json.optString("status"),
+            archived = json.optBoolean("archived", false),
+            donationAmount = if (json.isNull("donation_amount")) {
+                null
+            } else {
+                json.optDouble("donation_amount").takeUnless { it.isNaN() }
+            },
             comment = json.optNullableString("comment"),
             equipment = equipment,
         )

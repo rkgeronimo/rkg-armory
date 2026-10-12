@@ -630,7 +630,7 @@ private fun NumericKeypad(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
         listOf("7", "8", "9"),
-        listOf("X", "0", "⌫"),
+        listOf("", "0", "⌫"),
     )
 
     Column(
@@ -643,22 +643,18 @@ private fun NumericKeypad(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 row.forEach { key ->
+                    if (key.isEmpty()) {
+                        Spacer(Modifier.weight(1f))
+                        return@forEach
+                    }
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(keyHeight)
                             .clickable { onKey(key) },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (key == "X") {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        contentColor = if (key == "X") {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        color = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
                         border = BorderStroke(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.outline,

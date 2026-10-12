@@ -47,15 +47,16 @@ internal class ReturnsViewModel : ViewModel() {
         marks.clear()
     }
 
-    fun save(reservationId: Long, onDone: (stillOpen: Boolean) -> Unit) {
+    /** [donation] null keeps the stored amount, blank clears it. */
+    fun save(reservationId: Long, donation: String?, onDone: (stillOpen: Boolean) -> Unit) {
         val changes = marks
             .filterKeys { it.startsWith("$reservationId:") }
             .mapKeys { it.key.substringAfter(':') }
-        if (changes.isEmpty() || saving) return
+        if ((changes.isEmpty() && donation == null) || saving) return
         saving = true
         notice = null
         StaffSession.request({ credentials ->
-            ReservationClient.updateReturned(credentials, reservationId, changes)
+            ReservationClient.updateReturned(credentials, reservationId, changes, donation)
         }) { result ->
             saving = false
             result.fold(

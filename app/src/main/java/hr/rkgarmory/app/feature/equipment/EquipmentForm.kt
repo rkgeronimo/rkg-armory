@@ -63,7 +63,10 @@ internal fun EquipmentForm(
             .padding(24.dp)
             .widthIn(max = 560.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Readout("Vrsta", typeName)
             Readout("Šifra", piece.code)
             Readout("Veličina", piece.size)

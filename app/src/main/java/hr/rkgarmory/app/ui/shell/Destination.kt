@@ -3,6 +3,7 @@ package hr.rkgarmory.app.ui.shell
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AssignmentReturn
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.EventNote
 import androidx.compose.material.icons.rounded.FactCheck
 import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -24,6 +25,10 @@ internal enum class Destination(
     Returns(
         title = "Razduživanje",
         icon = Icons.Rounded.AssignmentReturn,
+    ),
+    Reservations(
+        title = "Rezervacije",
+        icon = Icons.Rounded.EventNote,
     ),
     Equipment(
         title = "Oprema",

@@ -852,28 +852,24 @@ private fun NumberPad(onKey: (String) -> Unit) {
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
         listOf("7", "8", "9"),
-        listOf("X", "0", "⌫"),
+        listOf("", "0", "⌫"),
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { key ->
+                    if (key.isEmpty()) {
+                        Spacer(Modifier.weight(1f))
+                        return@forEach
+                    }
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
                             .clickable { onKey(key) },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (key == "X") {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        contentColor = if (key == "X") {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        color = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         shadowElevation = 1.dp,
                     ) {
