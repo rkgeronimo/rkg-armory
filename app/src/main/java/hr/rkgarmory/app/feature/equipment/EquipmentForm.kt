@@ -168,7 +168,7 @@ private fun Readout(label: String, value: String, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+internal fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium,
@@ -178,7 +178,7 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun ChoiceChip(
+internal fun ChoiceChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,

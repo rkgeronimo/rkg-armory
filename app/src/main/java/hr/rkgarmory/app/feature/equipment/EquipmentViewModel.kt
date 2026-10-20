@@ -141,6 +141,31 @@ internal class EquipmentViewModel : ViewModel() {
         }
     }
 
+    fun create(
+        code: String,
+        type: String,
+        size: String,
+        note: String,
+        onDone: () -> Unit,
+    ) {
+        if (saving) return
+        saving = true
+        notice = null
+        StaffSession.request({ credentials ->
+            ReservationClient.createInventory(credentials, code, type, size, note)
+        }) { result ->
+            saving = false
+            result.fold(
+                onSuccess = { created ->
+                    pieces.add(created.toPiece())
+                    StaffSession.rememberInventory(StaffSession.cachedInventory.orEmpty() + created)
+                    onDone()
+                },
+                onFailure = { notice = createNotice(it) },
+            )
+        }
+    }
+
     fun save(
         piece: Piece,
         state: Int,
@@ -195,6 +220,15 @@ internal class EquipmentViewModel : ViewModel() {
 private fun saveNotice(error: Throwable): String = when (error) {
     is ReservationException -> when (error.http) {
         404 -> "Šifra nije pronađena."
+        400 -> "Unos nije valjan."
+        else -> reservationNotice(error)
+    }
+    else -> reservationNotice(error)
+}
+
+private fun createNotice(error: Throwable): String = when (error) {
+    is ReservationException -> when (error.http) {
+        409 -> "Šifra već postoji."
         400 -> "Unos nije valjan."
         else -> reservationNotice(error)
     }

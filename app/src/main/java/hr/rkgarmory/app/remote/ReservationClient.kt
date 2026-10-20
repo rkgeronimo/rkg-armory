@@ -249,6 +249,23 @@ internal object ReservationClient {
         return List(array.length()) { index -> parseInventory(array.getJSONObject(index)) }
     }
 
+    /** Adds a piece. The backend starts it as available (state 0). */
+    fun createInventory(
+        credentials: StaffCredentials,
+        id: String,
+        type: String,
+        size: String,
+        note: String,
+    ): InventoryPiece {
+        val body = JSONObject()
+            .put("id", id)
+            .put("type", type)
+            .put("size", size)
+        if (note.isNotBlank()) body.put("note", note)
+        val text = call(credentials, "POST", "/inventory", body.toString())
+        return parseInventory(JSONObject(text))
+    }
+
     fun updateInventory(
         credentials: StaffCredentials,
         id: String,

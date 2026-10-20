@@ -17,7 +17,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.runtime.remember
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -65,6 +74,7 @@ internal fun EquipmentScreen() {
     var statusFilter by rememberSaveable { mutableStateOf("Sve") }
     var typeFilter by rememberSaveable { mutableStateOf("Sve") }
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
+    var creating by rememberSaveable { mutableStateOf(false) }
     var page by rememberSaveable { mutableIntStateOf(0) }
     val editing = viewModel.pieces.firstOrNull { it.id == editingId }
     val visible = viewModel.pieces.filter { piece ->
@@ -101,6 +111,21 @@ internal fun EquipmentScreen() {
     }
     LaunchedEffect(editingId) {
         if (editingId != null) viewModel.notice = null
+    }
+    LaunchedEffect(creating) {
+        if (creating) viewModel.notice = null
+    }
+
+    if (creating) {
+        EquipmentCreateForm(
+            saving = viewModel.saving,
+            notice = viewModel.notice,
+            onSave = { code, type, size, note ->
+                viewModel.create(code, type, size, note) { creating = false }
+            },
+            onCancel = { creating = false },
+        )
+        return
     }
 
     if (editing != null) {
@@ -140,36 +165,61 @@ internal fun EquipmentScreen() {
             )
         }
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                placeholder = { Text("Traži šifru, vrstu ili ime") },
-                leadingIcon = { IconSearch() },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    disabledContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    placeholder = { Text("Traži šifru, vrstu ili ime") },
+                    leadingIcon = { IconSearch() },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
+                AddButton(phone = phone, onClick = { creating = true })
+            }
             Spacer(Modifier.height(10.dp))
-            SegmentedTabs(
-                options = (listOf("Sve") + inventoryStatuses).map { it to it },
-                selected = statusFilter,
-                onSelect = { statusFilter = it },
-            )
-            Spacer(Modifier.height(8.dp))
-            SegmentedTabs(
-                options = listOf("Sve" to "Sve") + inventoryTypes.map { (id, label) ->
-                    id to typeTabLabel(label)
-                },
-                selected = typeFilter,
-                onSelect = { typeFilter = it },
-            )
+            if (phone) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilterSelect(
+                        label = "Status",
+                        options = (listOf("Sve") + inventoryStatuses).map { it to it },
+                        selected = statusFilter,
+                        onSelect = { statusFilter = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                    FilterSelect(
+                        label = "Vrsta",
+                        options = listOf("Sve" to "Sve") + inventoryTypes,
+                        selected = typeFilter,
+                        onSelect = { typeFilter = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            } else {
+                SegmentedTabs(
+                    options = (listOf("Sve") + inventoryStatuses).map { it to it },
+                    selected = statusFilter,
+                    onSelect = { statusFilter = it },
+                )
+                Spacer(Modifier.height(8.dp))
+                SegmentedTabs(
+                    options = listOf("Sve" to "Sve") + inventoryTypes.map { (id, label) ->
+                        id to typeTabLabel(label)
+                    },
+                    selected = typeFilter,
+                    onSelect = { typeFilter = it },
+                )
+            }
         }
         HorizontalDivider()
         if (shown.isEmpty()) {
@@ -209,6 +259,74 @@ internal fun EquipmentScreen() {
                     onPage = { page = it },
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterSelect(
+    label: String,
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = options.firstOrNull { it.first == selected }?.second.orEmpty(),
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            label = { Text(label) },
+            trailingIcon = {
+                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { (id, text) ->
+                DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = {
+                        onSelect(id)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddButton(phone: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = if (phone) Modifier.size(56.dp) else Modifier.height(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        contentPadding = if (phone) PaddingValues(0.dp) else ButtonDefaults.ContentPadding,
+    ) {
+        if (phone) {
+            Icon(Icons.Rounded.Add, contentDescription = "Dodaj opremu")
+        } else {
+            Text("Dodaj opremu", fontWeight = FontWeight.SemiBold)
         }
     }
 }
