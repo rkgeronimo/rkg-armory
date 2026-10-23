@@ -320,6 +320,8 @@ internal fun IssuanceScreen(openId: Long? = null) {
     }
 }
 
+private const val UserPickerLimit = 50
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserPicker(
@@ -329,22 +331,40 @@ private fun UserPicker(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf(selected?.userName.orEmpty()) }
+    // Users load after the picker is shown, so the picked name can arrive late.
+    LaunchedEffect(selected) {
+        if (selected != null) query = selected.userName
+    }
+    // The picked name stays in the field, so it only filters once edited.
+    val text = query.trim().takeIf { it != selected?.userName.orEmpty() }.orEmpty()
+    val matches = users
+        .filter { text.isEmpty() || it.userName.contains(text, ignoreCase = true) }
+        .take(UserPickerLimit)
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
         modifier = modifier,
     ) {
         OutlinedTextField(
-            value = selected?.userName.orEmpty(),
-            onValueChange = {},
-            readOnly = true,
+            value = query,
+            onValueChange = {
+                query = it
+                expanded = true
+                if (selected != null && it != selected.userName) onSelect(null)
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                .menuAnchor(MenuAnchorType.PrimaryEditable),
             label = { Text("Korisnik") },
-            placeholder = { Text("Odaberi korisnika") },
+            placeholder = { Text("Traži korisnika") },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             trailingIcon = {
-                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+                Icon(
+                    Icons.Rounded.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = Modifier.menuAnchor(MenuAnchorType.SecondaryEditable),
+                )
             },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
@@ -358,16 +378,17 @@ private fun UserPicker(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            if (users.isEmpty()) {
+            if (matches.isEmpty()) {
                 DropdownMenuItem(
                     text = { Text("Nema korisnika") },
                     onClick = { expanded = false },
                 )
             } else {
-                users.forEach { user ->
+                matches.forEach { user ->
                     DropdownMenuItem(
                         text = { Text(user.userName) },
                         onClick = {
+                            query = user.userName
                             onSelect(user)
                             expanded = false
                         },

@@ -55,6 +55,13 @@ internal object StaffSession {
         cachedInventory = list
     }
 
+    /** Issuing and returning change piece states on the server. */
+    fun refreshInventory() {
+        request(ReservationClient::listInventory) { result ->
+            result.onSuccess { cachedInventory = it }
+        }
+    }
+
     fun signOut() {
         credentials = null
         cachedActive = null

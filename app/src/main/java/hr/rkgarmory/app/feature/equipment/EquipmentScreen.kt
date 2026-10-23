@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -185,6 +186,10 @@ internal fun EquipmentScreen() {
                         disabledContainerColor = MaterialTheme.colorScheme.surface,
                     ),
                 )
+                RefreshButton(
+                    refreshing = viewModel.refreshing,
+                    onClick = { viewModel.reload() },
+                )
                 AddButton(phone = phone, onClick = { creating = true })
             }
             Spacer(Modifier.height(10.dp))
@@ -311,6 +316,26 @@ private fun FilterSelect(
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun RefreshButton(refreshing: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = !refreshing,
+        modifier = Modifier.size(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        if (refreshing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Icon(Icons.Rounded.Refresh, contentDescription = "Osvježi")
         }
     }
 }

@@ -118,25 +118,29 @@ internal class EquipmentViewModel : ViewModel() {
     val pieces = mutableStateListOf<Piece>()
     var notice by mutableStateOf<String?>(null)
     var loading by mutableStateOf(true)
+    var refreshing by mutableStateOf(false)
     var saving by mutableStateOf(false)
 
     fun reload() {
-        if (pieces.isEmpty()) {
-            StaffSession.cachedInventory?.let { cached ->
-                pieces.addAll(cached.map { it.toPiece() })
-            }
+        if (refreshing) return
+        // The cache may be newer, issuing and returning refresh it.
+        StaffSession.cachedInventory?.let { cached ->
+            pieces.clear()
+            pieces.addAll(cached.map { it.toPiece() })
         }
         loading = pieces.isEmpty()
+        refreshing = true
         notice = null
         StaffSession.request(ReservationClient::listInventory) { result ->
             loading = false
+            refreshing = false
             result.fold(
                 onSuccess = { loaded ->
                     StaffSession.rememberInventory(loaded)
                     pieces.clear()
                     pieces.addAll(loaded.map { it.toPiece() })
                 },
-                onFailure = { if (pieces.isEmpty()) notice = reservationNotice(it) },
+                onFailure = { notice = reservationNotice(it) },
             )
         }
     }

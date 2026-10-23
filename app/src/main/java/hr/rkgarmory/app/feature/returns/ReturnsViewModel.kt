@@ -64,6 +64,7 @@ internal class ReturnsViewModel : ViewModel() {
                     val index = reservations.indexOfFirst { it.id == updated.id }
                     if (index >= 0) reservations[index] = updated
                     StaffSession.rememberActive(reservations.toList())
+                    if (changes.isNotEmpty()) StaffSession.refreshInventory()
                     changes.keys.forEach { marks.remove("$reservationId:$it") }
                     onDone(updated.openPieces().isNotEmpty())
                 },

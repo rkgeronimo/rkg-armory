@@ -112,6 +112,7 @@ internal fun AppShell(
                     selected = selected,
                     openReservationId = openReservationId,
                     onOpenRequest = openRequest,
+                    onSelect = select,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -186,6 +187,7 @@ private fun DrawerShell(
                 selected = selected,
                 openReservationId = openReservationId,
                 onOpenRequest = onOpenRequest,
+                onSelect = onSelect,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -197,6 +199,7 @@ private fun ShellContent(
     selected: Destination,
     openReservationId: Long?,
     onOpenRequest: (Destination, Long) -> Unit,
+    onSelect: (Destination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -208,6 +211,8 @@ private fun ShellContent(
             Destination.Home -> HomeScreen(
                 onOpenIssuance = { onOpenRequest(Destination.Issuance, it) },
                 onOpenReturns = { onOpenRequest(Destination.Returns, it) },
+                onShowIssuance = { onSelect(Destination.Issuance) },
+                onShowReturns = { onSelect(Destination.Returns) },
             )
             Destination.Issuance -> IssuanceScreen(openId = openReservationId)
             Destination.Returns -> ReturnsScreen(openId = openReservationId)

@@ -143,7 +143,7 @@ private fun WideIssuanceEditor(
                         selected = equipment == selectedEquipment,
                         value = equipmentValues[equipment].orEmpty(),
                         size = equipmentSizes[equipment].orEmpty(),
-                        wanted = requested[equipment] != "—",
+                        requested = requested[equipment] ?: "—",
                         onClick = { onEquipmentSelected(equipment) },
                     )
                 }
@@ -258,7 +258,7 @@ private fun CompactIssuanceEditor(
                         selected = equipment == selectedEquipment,
                         value = equipmentValues[equipment].orEmpty(),
                         size = equipmentSizes[equipment].orEmpty(),
-                        wanted = requested[equipment] != "—",
+                        requested = requested[equipment] ?: "—",
                         compact = true,
                         onClick = { onEquipmentSelected(equipment) },
                         modifier = Modifier.weight(1f),
@@ -427,6 +427,14 @@ private fun EquipmentCodeInput(
 private val FilledEquipment = Color(0xFF1B7F4E)
 private val WantedEquipment = Color(0xFFFFF3C4)
 
+/** "Odijelo (5)" when a size was requested, see [requestedMark]. */
+private fun choiceLabel(equipment: String, requested: String): String {
+    val name = typeTabLabel(equipment)
+    // Regulators and masks come in one size.
+    val sized = equipment != "Regulator" && equipment != LoanMaskaDisalica
+    return if (!sized || requested == "—" || requested == "Da") name else "$name ($requested)"
+}
+
 @Composable
 private fun EquipmentChoice(
     equipment: String,
@@ -434,11 +442,13 @@ private fun EquipmentChoice(
     value: String,
     size: String,
     onClick: () -> Unit,
-    wanted: Boolean = false,
+    requested: String = "—",
     compact: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val filled = loanReady(equipment, size, value)
+    val wanted = requested != "—"
+    val label = choiceLabel(equipment, requested)
     val container = when {
         filled -> FilledEquipment
         selected -> MaterialTheme.colorScheme.primary
@@ -474,7 +484,7 @@ private fun EquipmentChoice(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = typeTabLabel(equipment),
+                    text = label,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
@@ -531,7 +541,7 @@ private fun EquipmentChoice(
             }
             Spacer(Modifier.width(if (compact) 6.dp else 10.dp))
             Text(
-                text = typeTabLabel(equipment),
+                text = label,
                 modifier = Modifier.weight(1f),
                 style = if (compact) {
                     MaterialTheme.typography.labelLarge

@@ -158,6 +158,7 @@ internal class IssuanceViewModel : ViewModel() {
                             .filter { it.id != created.id }
                         StaffSession.rememberActive(listOf(created) + active)
                     }
+                    StaffSession.refreshInventory()
                     clearAll()
                     onDone()
                 },
@@ -188,6 +189,7 @@ internal class IssuanceViewModel : ViewModel() {
                             .filter { it.id != updated.id }
                         StaffSession.rememberActive(active + updated)
                     }
+                    StaffSession.refreshInventory()
                     clearAll()
                     onDone()
                 },

@@ -48,6 +48,8 @@ import hr.rkgarmory.app.remote.Reservation
 internal fun HomeScreen(
     onOpenIssuance: (Long) -> Unit,
     onOpenReturns: (Long) -> Unit,
+    onShowIssuance: () -> Unit,
+    onShowReturns: () -> Unit,
     viewModel: HomeViewModel = viewModel(),
 ) {
     val pending = viewModel.pending
@@ -79,11 +81,13 @@ internal fun HomeScreen(
                 value = pending?.size?.toString() ?: "…",
                 label = "Izdavanja",
                 icon = Icons.Rounded.SwapHoriz,
+                onClick = onShowIssuance,
             )
             SummaryCard(
                 value = active?.size?.toString() ?: "…",
                 label = "Razduživanje",
                 icon = Icons.Rounded.AssignmentReturn,
+                onClick = onShowReturns,
             )
         }
         if (portrait) {
@@ -128,9 +132,11 @@ private fun SummaryCard(
     value: String,
     label: String,
     icon: ImageVector,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
