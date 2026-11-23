@@ -29,7 +29,7 @@ described in `../wp-web/docs/changes/`, one file per change, named
 - `docs/wp-rest-agent.md` in this repository is the original brief and is
   older than the change log. Where they disagree, the change log wins.
 
-Last entry implemented in the app: `2026-10-12-reservation-archive-and-donation.md`.
+Last entry implemented in the app: `2026-11-19-excursions-while-gear-out.md`.
 Update this line when a newer entry is implemented.
 
 ## Build

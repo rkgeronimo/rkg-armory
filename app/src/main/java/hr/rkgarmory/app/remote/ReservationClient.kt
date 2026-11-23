@@ -74,6 +74,8 @@ internal data class Reservation(
     val donationAmount: Double?,
     val comment: String?,
     val equipment: Map<String, ReservedPiece>,
+    /** Excursions since the gear still out was issued. Null when there is no data. */
+    val excursionsWhileOut: Int?,
 )
 
 internal class ReservationException(
@@ -119,6 +121,9 @@ internal fun Reservation.listLabel(): String {
     val trip = excursion?.takeIf { it.isNotBlank() }
     return if (trip == null) userName else "$userName  $trip"
 }
+
+internal fun Reservation.excursionsWhileOutText(): String? =
+    excursionsWhileOut?.let { "Broj prijavljenih izleta: $it" }
 
 internal fun Reservation.openPieces(): List<Pair<String, ReservedPiece>> =
     equipmentKeys.mapNotNull { key ->
@@ -426,6 +431,11 @@ internal object ReservationClient {
             },
             comment = json.optNullableString("comment"),
             equipment = equipment,
+            excursionsWhileOut = if (json.isNull("excursions_while_out")) {
+                null
+            } else {
+                json.getInt("excursions_while_out")
+            },
         )
     }
 

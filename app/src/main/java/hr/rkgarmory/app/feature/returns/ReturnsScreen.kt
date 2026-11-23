@@ -60,6 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.feature.reservations.donationText
 import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.remote.ReservedPiece
+import hr.rkgarmory.app.remote.excursionsWhileOutText
 import hr.rkgarmory.app.remote.openPieces
 import hr.rkgarmory.app.remote.pieceTitle
 
@@ -263,6 +264,7 @@ internal fun ReturnsScreen(openId: Long? = null) {
                     .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                ReservationHeader(selected)
                 HeldPiecesCard(
                     reservationId = selected.id,
                     pieces = pieces,
@@ -329,6 +331,33 @@ internal fun ReturnsScreen(openId: Long? = null) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReservationHeader(reservation: Reservation) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = 720.dp)
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+    ) {
+        Text(
+            text = reservation.userName,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val excursions = reservation.excursionsWhileOutText()
+        if (excursions != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = excursions,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }
