@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -240,21 +242,22 @@ internal fun EquipmentScreen() {
                 )
             }
         } else {
-            val listModifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
             if (phone) {
                 PieceCards(
                     pieces = shown,
                     onOpen = { editingId = it },
-                    modifier = listModifier,
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
                 )
             } else {
                 PieceTable(
                     pieces = shown,
                     onOpen = { editingId = it },
-                    modifier = listModifier,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .padding(16.dp),
                 )
             }
             if (pageAll && pageCount > 1) {
@@ -378,33 +381,35 @@ private fun PieceTable(
     ) {
         Column {
             Box(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
-            TableRow(
-                code = "Šifra",
-                type = "Vrsta",
-                size = "Veličina",
-                status = "Status",
-                holder = "Zadužio/la",
-                issuedOn = "Datum izdavanja",
-                note = "Napomena",
-                header = true,
-                onOpen = {},
-            )
+                TableRow(
+                    code = "Šifra",
+                    type = "Vrsta",
+                    size = "Veličina",
+                    status = "Status",
+                    holder = "Zadužio/la",
+                    issuedOn = "Datum izdavanja",
+                    note = "Napomena",
+                    header = true,
+                    onOpen = {},
+                )
             }
-            pieces.forEach { piece ->
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            TableRow(
-                code = piece.code,
-                type = piece.type,
-                size = piece.size.ifBlank { pieceSize(piece.type, piece.code) },
-                status = piece.status,
-                holder = piece.holder.orEmpty(),
-                issuedOn = piece.issuedOn.orEmpty(),
-                note = piece.note,
-                header = false,
-                showPill = true,
-                onOpen = { onOpen(piece.id) },
-            )
-        }
+            LazyColumn {
+                items(pieces, key = { it.id }) { piece ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    TableRow(
+                        code = piece.code,
+                        type = piece.type,
+                        size = piece.size.ifBlank { pieceSize(piece.type, piece.code) },
+                        status = piece.status,
+                        holder = piece.holder.orEmpty(),
+                        issuedOn = piece.issuedOn.orEmpty(),
+                        note = piece.note,
+                        header = false,
+                        showPill = true,
+                        onOpen = { onOpen(piece.id) },
+                    )
+                }
+            }
         }
     }
 }
