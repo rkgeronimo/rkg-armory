@@ -156,6 +156,7 @@ internal data class InventoryPiece(
 
 private const val ListPageSize = 200
 private const val ListMaxPages = 25
+private const val InventoryPageSize = 500
 
 internal object ReservationClient {
     fun listActive(credentials: StaffCredentials): List<Reservation> = list(credentials, 1)
@@ -249,9 +250,21 @@ internal object ReservationClient {
     }
 
     fun listInventory(credentials: StaffCredentials): List<InventoryPiece> {
-        val body = call(credentials, "GET", "/inventory", null)
-        val array = JSONArray(body)
-        return List(array.length()) { index -> parseInventory(array.getJSONObject(index)) }
+        val all = mutableListOf<InventoryPiece>()
+        for (page in 1..ListMaxPages) {
+            val body = call(
+                credentials,
+                "GET",
+                "/inventory?per_page=$InventoryPageSize&page=$page",
+                null,
+            )
+            val array = JSONArray(body)
+            for (index in 0 until array.length()) {
+                all += parseInventory(array.getJSONObject(index))
+            }
+            if (array.length() < InventoryPageSize) break
+        }
+        return all
     }
 
     /** Adds a piece. The backend starts it as available (state 0). */
