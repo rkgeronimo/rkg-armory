@@ -33,25 +33,36 @@ internal object StaffSession {
     private val io = Executors.newFixedThreadPool(2)
     private val main = Handler(Looper.getMainLooper())
 
+    /**
+     * The active list checks the credentials. Home opens first and shows both
+     * lists, so sign-in waits for the pending one too; the two load side by side.
+     */
     fun signIn(username: String, password: String, onResult: (String?) -> Unit) {
         val next = StaffCredentials(username.trim(), password.replace(" ", ""))
-        io.execute {
-            val loaded = try {
-                ReservationClient.listActive(next)
-            } catch (thrown: Throwable) {
-                main.post { onResult(reservationNotice(thrown)) }
-                return@execute
-            }
-            // Home opens first and shows both lists, so it waits for this one too.
-            val pending = runCatching { ReservationClient.listPending(next) }.getOrNull()
-            main.post {
-                credentials = next
-                cachedActive = loaded
-                cachedPending = pending
-                onResult(null)
-                load(ReservationClient::listInventory) { cachedInventory = it }
-                load(ReservationClient::listAll) { cachedReservations = it }
-            }
+        var active: List<Reservation>? = null
+        var pending: Result<List<Reservation>>? = null
+        fun finish() {
+            val loaded = active ?: return
+            val other = pending ?: return
+            credentials = next
+            cachedActive = loaded
+            cachedPending = other.getOrNull()
+            onResult(null)
+            load(ReservationClient::listInventory) { cachedInventory = it }
+            load(ReservationClient::listAll) { cachedReservations = it }
+        }
+        background({ ReservationClient.listActive(next) }) { result ->
+            result.fold(
+                onSuccess = {
+                    active = it
+                    finish()
+                },
+                onFailure = { onResult(reservationNotice(it)) },
+            )
+        }
+        background({ ReservationClient.listPending(next) }) {
+            pending = it
+            finish()
         }
     }
 
@@ -104,8 +115,12 @@ internal object StaffSession {
             onResult(Result.failure(ReservationException(401, "rkg_forbidden")))
             return
         }
+        background({ block(current) }, onResult)
+    }
+
+    private fun <T> background(block: () -> T, onResult: (Result<T>) -> Unit) {
         io.execute {
-            val result = runCatching { block(current) }
+            val result = runCatching(block)
             main.post { onResult(result) }
         }
     }
