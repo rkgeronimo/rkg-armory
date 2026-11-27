@@ -12,8 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -34,6 +38,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
@@ -50,6 +55,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,6 +86,8 @@ internal fun EquipmentScreen() {
     var editingId by rememberSaveable { mutableStateOf<String?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
     var page by rememberSaveable { mutableIntStateOf(0) }
+    // Held here so the phone list keeps its place while a piece is open.
+    val phoneListState = rememberLazyListState()
     val editing = viewModel.pieces.firstOrNull { it.id == editingId }
     val visible = viewModel.pieces.filter { piece ->
         val statusOk = statusFilter == "Sve" || piece.status == statusFilter
@@ -90,7 +99,8 @@ internal fun EquipmentScreen() {
             piece.holder.orEmpty().contains(text, ignoreCase = true)
         statusOk && typeOk && textOk
     }
-    val pageAll = statusFilter == "Sve" && typeFilter == "Sve"
+    // The phone list is lazy and scrolls whole; pages are for the tablet table.
+    val pageAll = !phone && statusFilter == "Sve" && typeFilter == "Sve"
     val pageCount = if (!pageAll || visible.isEmpty()) {
         1
     } else {
@@ -178,7 +188,7 @@ internal fun EquipmentScreen() {
                     placeholder = "Traži šifru, vrstu ili ime",
                     modifier = Modifier.weight(1f),
                 )
-                AddButton(phone = phone, onClick = { creating = true })
+                if (!phone) AddButton(onClick = { creating = true })
             }
             Spacer(Modifier.height(10.dp))
             if (phone) {
@@ -235,19 +245,28 @@ internal fun EquipmentScreen() {
                     )
                 }
             } else if (phone) {
-                PieceCards(
+                PieceList(
                     pieces = shown,
+                    state = phoneListState,
                     onOpen = { editingId = it },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
                 )
             } else {
                 PieceTable(
                     pieces = shown,
                     onOpen = { editingId = it },
                     modifier = Modifier.padding(16.dp),
+                )
+            }
+            if (phone) {
+                ExtendedFloatingActionButton(
+                    onClick = { creating = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                    icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
+                    text = { Text("Dodaj opremu", fontWeight = FontWeight.SemiBold) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }
@@ -314,18 +333,13 @@ private fun FilterSelect(
 }
 
 @Composable
-private fun AddButton(phone: Boolean, onClick: () -> Unit) {
+private fun AddButton(onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = if (phone) Modifier.size(56.dp) else Modifier.height(56.dp),
+        modifier = Modifier.height(56.dp),
         shape = RoundedCornerShape(12.dp),
-        contentPadding = if (phone) PaddingValues(0.dp) else ButtonDefaults.ContentPadding,
     ) {
-        if (phone) {
-            Icon(Icons.Rounded.Add, contentDescription = "Dodaj opremu")
-        } else {
-            Text("Dodaj opremu", fontWeight = FontWeight.SemiBold)
-        }
+        Text("Dodaj opremu", fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -376,88 +390,129 @@ private fun PieceTable(
     }
 }
 
+/**
+ * Phone list: a count line, then the pieces as rows of one rounded block.
+ * Lazy, so a few hundred pieces scroll without pages. The bottom padding
+ * keeps the last row clear of the "Dodaj opremu" button.
+ */
 @Composable
-private fun PieceCards(
+private fun PieceList(
     pieces: List<Piece>,
+    state: LazyListState,
     onOpen: (String) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    val issued = pieces.count { it.status == StatusIssuedLabel }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
     ) {
-        pieces.forEach { piece ->
-            Card(
+        // No key: piece ids are user-entered codes, so any string key could collide.
+        item {
+            Text(
+                text = "${pieces.size} ${pieceWord(pieces.size)} · $issued izdano",
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        itemsIndexed(pieces, key = { _, piece -> piece.id }) { index, piece ->
+            val top = if (index == 0) 16.dp else 0.dp
+            val bottom = if (index == pieces.lastIndex) 16.dp else 0.dp
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 96.dp)
-                    .clickable { onOpen(piece.id) },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    .clip(RoundedCornerShape(top, top, bottom, bottom))
+                    .background(MaterialTheme.colorScheme.surface),
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CardLabel("Šifra")
-                        CardValue(piece.code)
-                        Text(
-                            text = piece.type,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 12.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        StatusPill(piece.status)
-                    }
-                    Row {
-                        CardLabel("Veličina")
-                        CardValue(piece.size.ifBlank { pieceSize(piece.type, piece.code) })
-                    }
-                    if (piece.status == StatusIssuedLabel) {
-                        CardValue(
-                            listOf(piece.holder.orEmpty(), piece.issuedOn.orEmpty())
-                                .filter { it.isNotBlank() }
-                                .joinToString(" · "),
-                        )
-                    }
-                    if (piece.note.isNotBlank()) {
-                        Text(
-                            text = piece.note,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                PieceRow(piece, onOpen = { onOpen(piece.id) })
             }
         }
     }
 }
 
-@Composable
-private fun CardLabel(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier.padding(end = 8.dp),
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
+private fun pieceWord(count: Int): String =
+    if (count % 10 == 1 && count % 100 != 11) "komad" else "komada"
 
 @Composable
-private fun CardValue(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyLarge,
-        fontWeight = FontWeight.Medium,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-    )
+private fun PieceRow(piece: Piece, onOpen: () -> Unit) {
+    val size = piece.size.ifBlank { pieceSize(piece.type, piece.code) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable(onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TypeTile(piece.type)
+        Spacer(Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = piece.code,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = listOfNotNull(piece.type, size.takeIf { it.isNotBlank() }?.let { "vel. $it" })
+                    .joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (piece.status == StatusIssuedLabel) {
+                val holder = listOf(piece.holder.orEmpty(), piece.issuedOn.orEmpty())
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · ")
+                if (holder.isNotEmpty()) {
+                    Text(
+                        text = holder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (piece.note.isNotBlank()) {
+                Text(
+                    text = piece.note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        StatusPill(piece.status)
+    }
+}
+
+/** First two letters of the equipment type in a tinted square. */
+@Composable
+private fun TypeTile(type: String) {
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp))
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = type.take(2).uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
 }
 
 @Composable

@@ -45,6 +45,10 @@ Tablet u pejzažu: panel fiksno lijevo, 220dp. Tablet u portretu i mobitel u pej
 
 Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka panela 72dp. Dno panela: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
 
+## Prijava
+
+Fotografija `login_bg.jpg` preko cijelog zaslona (portretni izrez u `res/drawable-nodpi`, pejzažni u `res/drawable-land-nodpi`, oba iz istog Unsplash originala), ispod nje statusna traka, preko nje okomiti tamni preljev. Portret: bijeli logo, naslov i podnaslov (sa sjenom) na fotografiji, obrazac u donjem listu `surface` (gore radius 28dp) koji se diže s tipkovnicom. Pejzaž: naslov i kartica obrasca jedno do drugog. Lozinka ima ikonu oka („Prikaži lozinku“ / „Sakrij lozinku“).
+
 ## Početna
 
 - Zaglavlje: `HomeHeader` (`#0B3A5C`), isto u obje teme. Logo bijeli, pozdrav (Dobro jutro / Dobar dan / Dobra večer) bijeli bold, ispod datum („Petak, 27. studenoga“) bijeli 80%.
@@ -78,19 +82,22 @@ Dodir kućice označava. Dodir ostatka reda radi svoju radnju.
 
 Kartica popisa u portretu nema sjenu. Obrub 1dp `outlineVariant`: `border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)`.
 
-Kartica tablice, sažetka i obrasca: sjena 1dp i isti obrub. Kartica Prijave zasad ima sjenu 4dp.
+Kartica tablice, sažetka i obrasca: sjena 1dp i isti obrub. Kartica Prijave (pejzaž) ima sjenu 4dp.
 
 Popis u portretu je kartica, u pejzažu tablica.
 
-Kartica popisa u portretu (Oprema): bijela `surface`, visina najmanje 96dp. Razmak 10dp.
-
 Sažetak na Izdavanju: kartica `surface`, zaglavlje u `primaryContainer`.
 
-Redak Opreme u `bodyLarge`, status u `labelLarge`. Natpis sivi, vrijednost tamna medium. Tri linije:
+## Oprema
 
-1. lijevo natpis Šifra i šifra, sredina vrsta, desno `StatusChip`
-2. natpis Veličina, veličina
-3. zadužio/la i datum, samo ako je Izdano
+- Mobitel: `PieceList`, `LazyColumn` bez stranica. Gore broj („N komad/komada · X izdano“), pa jedan blok `surface`, prvi i zadnji redak zaobljeni 16dp, između razdjelnik `outlineVariant`. Dodavanje: `ExtendedFloatingActionButton` „Dodaj opremu“ dolje desno, `primary`.
+- Tablet: gumb „Dodaj opremu“ uz pretragu, tablica 40 po stranici (`PageBar`).
+
+Redak Opreme na mobitelu (`PieceRow`), najmanje 64dp, cijeli redak otvara komad:
+
+1. lijevo `TypeTile`: 44dp, radius 12dp, `primaryContainer`, prva dva slova vrste velikim slovima. TalkBack ga preskače.
+2. sredina: šifra (`titleMedium`, semibold), „vrsta · vel. N“ sivo, zadužio/la i datum (samo Izdano) medium, napomena `bodySmall` sivo, najviše 2 retka
+3. desno `StatusChip`
 
 ## Tablica u pejzažu
 
