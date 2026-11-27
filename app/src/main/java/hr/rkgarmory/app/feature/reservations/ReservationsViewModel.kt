@@ -14,17 +14,31 @@ internal class ReservationsViewModel : ViewModel() {
     val reservations = mutableStateListOf<Reservation>()
     var notice by mutableStateOf<String?>(null)
     var loading by mutableStateOf(true)
+    var refreshing by mutableStateOf(false)
     var saving by mutableStateOf(false)
 
+    /** Shows the shared list. The server is asked only while there is none yet. */
+    fun open() {
+        val cached = StaffSession.cachedReservations ?: return reload()
+        reservations.clear()
+        reservations.addAll(cached)
+        loading = false
+    }
+
     fun reload() {
-        loading = reservations.isEmpty()
+        if (refreshing) return
+        // Full-screen spinner only until the first answer, later reloads show the pull indicator.
+        loading = loading && reservations.isEmpty()
+        refreshing = true
         notice = null
         StaffSession.request(ReservationClient::listAll) { result ->
             loading = false
+            refreshing = false
             result.fold(
                 onSuccess = { loaded ->
                     reservations.clear()
                     reservations.addAll(loaded)
+                    StaffSession.rememberReservations(loaded)
                 },
                 onFailure = { notice = reservationNotice(it) },
             )
@@ -77,6 +91,8 @@ internal class ReservationsViewModel : ViewModel() {
                 if (index >= 0) {
                     if (updated.archived) reservations.removeAt(index) else reservations[index] = updated
                 }
+                StaffSession.rememberReservations(reservations.toList())
+                StaffSession.refreshAll()
             }
             if (failure != null) notice = reservationNotice(failure) else onDone()
         }

@@ -15,22 +15,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,7 +46,9 @@ import hr.rkgarmory.app.feature.equipment.PageBar
 import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.remote.equipmentKeys
 import hr.rkgarmory.app.remote.pieceMark
-import hr.rkgarmory.app.ui.SegmentedTabs
+import hr.rkgarmory.app.remote.StaffSession
+import hr.rkgarmory.app.ui.FilterChips
+import hr.rkgarmory.app.ui.SearchField
 import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.StatusInStock
 import hr.rkgarmory.app.ui.theme.StatusIssued
@@ -83,6 +80,7 @@ private fun Reservation.codes(): String = equipmentKeys
 private fun Reservation.donation(): String =
     donationAmount?.let { "${donationText(it)} €" } ?: "—"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ReservationsScreen() {
     val viewModel: ReservationsViewModel = viewModel()
@@ -111,8 +109,8 @@ internal fun ReservationsScreen() {
     val safePage = page.coerceIn(0, pageCount - 1)
     val shown = visible.drop(safePage * ReservationPageSize).take(ReservationPageSize)
 
-    LaunchedEffect(Unit) {
-        viewModel.reload()
+    LaunchedEffect(StaffSession.cachedReservations) {
+        viewModel.open()
     }
     LaunchedEffect(editingId) {
         if (editingId != null) viewModel.notice = null
@@ -155,73 +153,56 @@ internal fun ReservationsScreen() {
             )
         }
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    placeholder = { Text("Traži ime, izlet ili šifru") },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                )
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = { viewModel.reload() },
-                    modifier = Modifier.size(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(0.dp),
-                ) {
-                    Icon(Icons.Rounded.Refresh, contentDescription = "Osvježi")
-                }
-            }
+            SearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Traži ime, izlet ili šifru",
+                modifier = Modifier.fillMaxWidth(),
+            )
             Spacer(Modifier.height(10.dp))
-            SegmentedTabs(
+            FilterChips(
                 options = stateTabs,
                 selected = stateFilter,
                 onSelect = { stateFilter = it },
             )
         }
         HorizontalDivider()
-        if (shown.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Nema rezervacija",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        PullToRefreshBox(
+            isRefreshing = viewModel.refreshing,
+            onRefresh = { viewModel.reload() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            if (shown.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Nema rezervacija",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else if (phone) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(shown, key = { it.id }) { reservation ->
+                        ReservationCard(reservation, onOpen = { editingId = reservation.id })
+                    }
+                }
+            } else {
+                ReservationTable(
+                    reservations = shown,
+                    onOpen = { editingId = it },
+                    modifier = Modifier.padding(16.dp),
                 )
             }
-        } else if (phone) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(shown, key = { it.id }) { reservation ->
-                    ReservationCard(reservation, onOpen = { editingId = reservation.id })
-                }
-            }
-        } else {
-            ReservationTable(
-                reservations = shown,
-                onOpen = { editingId = it },
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .padding(16.dp),
-            )
         }
         if (pageCount > 1) {
             PageBar(

@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 internal enum class Destination(
     val title: String,
     val icon: ImageVector,
+    /** Label in the phone bottom bar, where a fifth of the width must fit it. */
+    val barLabel: String = title,
 ) {
     Home(
         title = "Početna",
@@ -25,6 +27,7 @@ internal enum class Destination(
     Returns(
         title = "Razduživanje",
         icon = Icons.Rounded.AssignmentReturn,
+        barLabel = "Razduži",
     ),
     Reservations(
         title = "Rezervacije",

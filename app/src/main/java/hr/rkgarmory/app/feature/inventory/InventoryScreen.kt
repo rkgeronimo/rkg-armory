@@ -59,7 +59,7 @@ import hr.rkgarmory.app.feature.equipment.codeLetter
 import hr.rkgarmory.app.feature.equipment.typeTabLabel
 import hr.rkgarmory.app.feature.equipment.typedNumberLimit
 import hr.rkgarmory.app.feature.equipment.equipmentTypes
-import hr.rkgarmory.app.ui.SegmentedTabs
+import hr.rkgarmory.app.ui.FilterChips
 import hr.rkgarmory.app.feature.equipment.pieceConditions
 import hr.rkgarmory.app.feature.equipment.pieceSize
 
@@ -264,7 +264,7 @@ private fun TypeChips(
     type: String,
     onType: (String) -> Unit,
 ) {
-    SegmentedTabs(
+    FilterChips(
         options = inventoryChips.map { it to typeTabLabel(it) },
         selected = type,
         onSelect = onType,

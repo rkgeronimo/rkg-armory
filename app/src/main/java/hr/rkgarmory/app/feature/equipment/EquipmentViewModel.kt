@@ -121,14 +121,18 @@ internal class EquipmentViewModel : ViewModel() {
     var refreshing by mutableStateOf(false)
     var saving by mutableStateOf(false)
 
+    /** Shows the shared list. The server is asked only while there is none yet. */
+    fun open() {
+        val cached = StaffSession.cachedInventory ?: return reload()
+        pieces.clear()
+        pieces.addAll(cached.map { it.toPiece() })
+        loading = false
+    }
+
     fun reload() {
         if (refreshing) return
-        // The cache may be newer, issuing and returning refresh it.
-        StaffSession.cachedInventory?.let { cached ->
-            pieces.clear()
-            pieces.addAll(cached.map { it.toPiece() })
-        }
-        loading = pieces.isEmpty()
+        // Full-screen spinner only until the first answer, later reloads show the pull indicator.
+        loading = loading && pieces.isEmpty()
         refreshing = true
         notice = null
         StaffSession.request(ReservationClient::listInventory) { result ->
@@ -162,7 +166,8 @@ internal class EquipmentViewModel : ViewModel() {
             result.fold(
                 onSuccess = { created ->
                     pieces.add(created.toPiece())
-                    StaffSession.rememberInventory(StaffSession.cachedInventory.orEmpty() + created)
+                    // No shared list yet: the next load brings the piece. An empty one would hide the rest.
+                    StaffSession.cachedInventory?.let { StaffSession.rememberInventory(it + created) }
                     onDone()
                 },
                 onFailure = { notice = createNotice(it) },
@@ -204,15 +209,15 @@ internal class EquipmentViewModel : ViewModel() {
                     } else if (index >= 0) {
                         pieces[index] = updated.toPiece()
                     }
-                    StaffSession.rememberInventory(
-                        StaffSession.cachedInventory.orEmpty().let { cached ->
+                    StaffSession.cachedInventory?.let { cached ->
+                        StaffSession.rememberInventory(
                             if (updated.state == 5) {
                                 cached.filter { it.id != updated.id }
                             } else {
                                 cached.map { if (it.id == updated.id) updated else it }
-                            }
-                        },
-                    )
+                            },
+                        )
+                    }
                     onDone()
                 },
                 onFailure = { notice = saveNotice(it) },

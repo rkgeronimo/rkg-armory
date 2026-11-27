@@ -20,14 +20,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.remember
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
@@ -36,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +56,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import hr.rkgarmory.app.ui.SegmentedTabs
+import hr.rkgarmory.app.remote.StaffSession
+import hr.rkgarmory.app.ui.FilterChips
+import hr.rkgarmory.app.ui.SearchField
 import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.StatusBroken
 import hr.rkgarmory.app.ui.theme.StatusInStock
@@ -108,8 +109,8 @@ internal fun EquipmentScreen() {
         visible
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.reload()
+    LaunchedEffect(StaffSession.cachedInventory) {
+        viewModel.open()
     }
     LaunchedEffect(editingId) {
         if (editingId != null) viewModel.notice = null
@@ -171,25 +172,11 @@ internal fun EquipmentScreen() {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
+                SearchField(
                     value = query,
                     onValueChange = { query = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    placeholder = { Text("Traži šifru, vrstu ili ime") },
-                    leadingIcon = { IconSearch() },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                )
-                RefreshButton(
-                    refreshing = viewModel.refreshing,
-                    onClick = { viewModel.reload() },
+                    placeholder = "Traži šifru, vrstu ili ime",
+                    modifier = Modifier.weight(1f),
                 )
                 AddButton(phone = phone, onClick = { creating = true })
             }
@@ -212,13 +199,13 @@ internal fun EquipmentScreen() {
                     )
                 }
             } else {
-                SegmentedTabs(
+                FilterChips(
                     options = (listOf("Sve") + inventoryStatuses).map { it to it },
                     selected = statusFilter,
                     onSelect = { statusFilter = it },
                 )
                 Spacer(Modifier.height(8.dp))
-                SegmentedTabs(
+                FilterChips(
                     options = listOf("Sve" to "Sve") + inventoryTypes.map { (id, label) ->
                         id to typeTabLabel(label)
                     },
@@ -228,25 +215,31 @@ internal fun EquipmentScreen() {
             }
         }
         HorizontalDivider()
-        if (shown.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Nema komada",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            if (phone) {
+        PullToRefreshBox(
+            isRefreshing = viewModel.refreshing,
+            onRefresh = { viewModel.reload() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            if (shown.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Nema komada",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else if (phone) {
                 PieceCards(
                     pieces = shown,
                     onOpen = { editingId = it },
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                 )
@@ -254,18 +247,16 @@ internal fun EquipmentScreen() {
                 PieceTable(
                     pieces = shown,
                     onOpen = { editingId = it },
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
-            if (pageAll && pageCount > 1) {
-                PageBar(
-                    page = safePage,
-                    pageCount = pageCount,
-                    onPage = { page = it },
-                )
-            }
+        }
+        if (pageAll && pageCount > 1) {
+            PageBar(
+                page = safePage,
+                pageCount = pageCount,
+                onPage = { page = it },
+            )
         }
     }
 }
@@ -323,26 +314,6 @@ private fun FilterSelect(
 }
 
 @Composable
-private fun RefreshButton(refreshing: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = !refreshing,
-        modifier = Modifier.size(56.dp),
-        shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(0.dp),
-    ) {
-        if (refreshing) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp,
-            )
-        } else {
-            Icon(Icons.Rounded.Refresh, contentDescription = "Osvježi")
-        }
-    }
-}
-
-@Composable
 private fun AddButton(phone: Boolean, onClick: () -> Unit) {
     Button(
         onClick = onClick,
@@ -356,14 +327,6 @@ private fun AddButton(phone: Boolean, onClick: () -> Unit) {
             Text("Dodaj opremu", fontWeight = FontWeight.SemiBold)
         }
     }
-}
-
-@Composable
-private fun IconSearch() {
-    androidx.compose.material3.Icon(
-        Icons.Rounded.Search,
-        contentDescription = null,
-    )
 }
 
 @Composable

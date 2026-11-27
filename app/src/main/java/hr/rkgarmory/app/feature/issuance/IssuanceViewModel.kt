@@ -74,16 +74,26 @@ internal class IssuanceViewModel : ViewModel() {
     val users = mutableStateListOf<StaffUser>()
     var notice by mutableStateOf<String?>(null)
     var loading by mutableStateOf(true)
+    var refreshing by mutableStateOf(false)
     var saving by mutableStateOf(false)
 
+    /** Shows the shared list. The server is asked only while there is none yet. */
+    fun open() {
+        val cached = StaffSession.cachedPending ?: return reload()
+        reservations.clear()
+        reservations.addAll(cached)
+        loading = false
+    }
+
     fun reload() {
-        if (reservations.isEmpty()) {
-            StaffSession.cachedPending?.let { reservations.addAll(it) }
-        }
-        loading = reservations.isEmpty()
+        if (refreshing) return
+        // Full-screen spinner only until the first answer, later reloads show the pull indicator.
+        loading = loading && reservations.isEmpty()
+        refreshing = true
         notice = null
         StaffSession.request(ReservationClient::listPending) { result ->
             loading = false
+            refreshing = false
             result.fold(
                 onSuccess = { loaded ->
                     StaffSession.rememberPending(loaded)
@@ -158,7 +168,7 @@ internal class IssuanceViewModel : ViewModel() {
                             .filter { it.id != created.id }
                         StaffSession.rememberActive(listOf(created) + active)
                     }
-                    StaffSession.refreshInventory()
+                    StaffSession.refreshAll()
                     clearAll()
                     onDone()
                 },
@@ -189,7 +199,7 @@ internal class IssuanceViewModel : ViewModel() {
                             .filter { it.id != updated.id }
                         StaffSession.rememberActive(active + updated)
                     }
-                    StaffSession.refreshInventory()
+                    StaffSession.refreshAll()
                     clearAll()
                     onDone()
                 },

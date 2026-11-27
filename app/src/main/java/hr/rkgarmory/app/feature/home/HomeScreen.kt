@@ -26,10 +26,12 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.remote.Reservation
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HomeScreen(
     onOpenIssuance: (Long) -> Unit,
@@ -58,70 +61,76 @@ internal fun HomeScreen(
         LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
 
     LaunchedEffect(Unit) {
-        viewModel.reload()
+        viewModel.open()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    PullToRefreshBox(
+        isRefreshing = viewModel.refreshing,
+        onRefresh = viewModel::reload,
+        modifier = Modifier.fillMaxSize(),
     ) {
-        if (viewModel.notice != null) {
-            Text(
-                text = viewModel.notice.orEmpty(),
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SummaryCard(
-                value = pending?.size?.toString() ?: "…",
-                label = "Izdavanja",
-                icon = Icons.Rounded.SwapHoriz,
-                onClick = onShowIssuance,
-            )
-            SummaryCard(
-                value = active?.size?.toString() ?: "…",
-                label = "Razduživanje",
-                icon = Icons.Rounded.AssignmentReturn,
-                onClick = onShowReturns,
-            )
-        }
-        if (portrait) {
-            RequestCard(
-                title = "Izdavanja",
-                rows = pending,
-                action = "Otvori izdavanje",
-                onOpen = onOpenIssuance,
-            )
-            RequestCard(
-                title = "Razduživanje",
-                rows = active,
-                action = "Otvori razduživanje",
-                onOpen = onOpenReturns,
-            )
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (viewModel.notice != null) {
+                Text(
+                    text = viewModel.notice.orEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SummaryCard(
+                    value = pending?.size?.toString() ?: "…",
+                    label = "Izdavanja",
+                    icon = Icons.Rounded.SwapHoriz,
+                    onClick = onShowIssuance,
+                )
+                SummaryCard(
+                    value = active?.size?.toString() ?: "…",
+                    label = "Razduživanje",
+                    icon = Icons.Rounded.AssignmentReturn,
+                    onClick = onShowReturns,
+                )
+            }
+            if (portrait) {
                 RequestCard(
                     title = "Izdavanja",
                     rows = pending,
                     action = "Otvori izdavanje",
                     onOpen = onOpenIssuance,
-                    modifier = Modifier.weight(1f),
                 )
                 RequestCard(
                     title = "Razduživanje",
                     rows = active,
                     action = "Otvori razduživanje",
                     onOpen = onOpenReturns,
-                    modifier = Modifier.weight(1f),
                 )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    RequestCard(
+                        title = "Izdavanja",
+                        rows = pending,
+                        action = "Otvori izdavanje",
+                        onOpen = onOpenIssuance,
+                        modifier = Modifier.weight(1f),
+                    )
+                    RequestCard(
+                        title = "Razduživanje",
+                        rows = active,
+                        action = "Otvori razduživanje",
+                        onOpen = onOpenReturns,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }

@@ -4,8 +4,10 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,14 +17,23 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -31,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,7 +90,18 @@ internal fun AppShell(
             .fillMaxSize()
             .safeDrawingPadding(),
     ) {
-        if (isPortrait || phone) {
+        if (phone && isPortrait) {
+            BottomBarShell(
+                selected = selected,
+                destinations = destinations,
+                darkTheme = darkTheme,
+                onSelect = select,
+                onToggleTheme = onToggleTheme,
+                onLogout = onLogout,
+                openReservationId = openReservationId,
+                onOpenRequest = openRequest,
+            )
+        } else if (isPortrait || phone) {
             DrawerShell(
                 selected = selected,
                 destinations = destinations,
@@ -189,6 +212,134 @@ private fun DrawerShell(
                 onOpenRequest = onOpenRequest,
                 onSelect = onSelect,
                 modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * Phone in portrait: title bar on top, destinations in a bottom bar.
+ * Theme and logout sit in the account menu at the top right. The bar
+ * hides while the keyboard is up, so it does not ride on top of it.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BottomBarShell(
+    selected: Destination,
+    destinations: List<Destination>,
+    darkTheme: Boolean,
+    onSelect: (Destination) -> Unit,
+    onToggleTheme: () -> Unit,
+    onLogout: () -> Unit,
+    openReservationId: Long?,
+    onOpenRequest: (Destination, Long) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .padding(start = 20.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = selected.title,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                AccountMenu(
+                    darkTheme = darkTheme,
+                    onToggleTheme = onToggleTheme,
+                    onLogout = onLogout,
+                )
+            }
+        }
+        HorizontalDivider()
+        ShellContent(
+            selected = selected,
+            openReservationId = openReservationId,
+            onOpenRequest = onOpenRequest,
+            onSelect = onSelect,
+            modifier = Modifier.weight(1f),
+        )
+        if (!WindowInsets.isImeVisible) {
+            HorizontalDivider()
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                windowInsets = WindowInsets(0, 0, 0, 0),
+            ) {
+                destinations.forEach { destination ->
+                    NavigationBarItem(
+                        selected = destination == selected,
+                        onClick = { onSelect(destination) },
+                        icon = { Icon(destination.icon, contentDescription = null) },
+                        label = {
+                            Text(
+                                text = destination.barLabel,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountMenu(
+    darkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(
+            onClick = { expanded = true },
+            modifier = Modifier.size(48.dp),
+        ) {
+            Icon(
+                Icons.Rounded.AccountCircle,
+                contentDescription = "Račun",
+                modifier = Modifier.size(28.dp),
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            DropdownMenuItem(
+                text = { Text(if (darkTheme) "Svijetla tema" else "Tamna tema") },
+                leadingIcon = {
+                    Icon(
+                        if (darkTheme) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onToggleTheme()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Odjava") },
+                leadingIcon = { Icon(Icons.Rounded.Logout, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onLogout()
+                },
             )
         }
     }

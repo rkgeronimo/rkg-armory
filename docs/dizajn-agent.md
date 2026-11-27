@@ -19,7 +19,7 @@ Svijetla tema, bijela pozadina.
 
 Status: `StatusChip` (`ui/StatusChip.kt`). Podloga je boja statusa na 16%, točka i tekst su boja statusa pomaknuta prema `onSurface`. Nema pune pilule sa svijetlim tekstom.
 
-Označena stavka trake u tamnoj temi: `#334155`.
+Označena stavka panela u tamnoj temi: `#334155`.
 
 ## Font
 
@@ -30,15 +30,20 @@ Plus Jakarta Sans u svim stilovima (`AppTypography` u `Theme.kt`). Jedan varijab
 - Naslov zaslona 26sp, semibold.
 - Dodir najmanje 48dp.
 - Polje i glavni gumb 56dp, radius 12dp.
-- Čip 48dp, radius 12dp.
+- Pretraga iznad popisa: `SearchField`, 56dp, pilula na `surfaceContainerHigh`, obrub samo u fokusu.
+- Filter: `FilterChips`, zasebni čipovi 48dp, radius 12dp, red se pomiče vodoravno. Označen: `primaryContainer` i kvačica. Ostali: `surface`, obrub 1dp `outline`.
+
+Popis se osvježava povlačenjem prema dolje (`PullToRefreshBox`), i na Početnoj. Gumba Osvježi nema.
+
+Podaci se učitavaju pri prijavi i nakon izdavanja, razduživanja i spremanja rezervacije (`StaffSession.refreshAll`). Spremanje opreme samo mijenja popis u `StaffSession`. Ulazak na ekran ne pita server, nego prikazuje popis iz `StaffSession`. Server pita samo kad tog popisa još nema.
 
 ## Traka
 
-Pejzaž: fiksna lijevo, 220dp. Portret: hamburger otvara isti panel kao modal, širina 240dp.
+Mobitel u portretu: donja traka s pet odredišta, naslov zaslona gore. Natpis za Razduživanje na traci je „Razduži“ (`barLabel`). Označeno odredište: pilula `primaryContainer`, ikona `onPrimaryContainer`. Tema i Odjava su u izborniku ikone računa gore desno. Traka se skriva dok je tipkovnica otvorena.
 
-Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka 72dp. Dno: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
+Tablet u pejzažu: panel fiksno lijevo, 220dp. Tablet u portretu i mobitel u pejzažu: hamburger otvara isti panel kao modal, širina 240dp.
 
-Tema stoji na traci.
+Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka panela 72dp. Dno panela: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
 
 ## Kućica
 
