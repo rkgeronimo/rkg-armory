@@ -39,11 +39,21 @@ Podaci se učitavaju pri prijavi i nakon izdavanja, razduživanja i spremanja re
 
 ## Traka
 
-Mobitel u portretu: donja traka s pet odredišta, naslov zaslona gore. Natpis za Razduživanje na traci je „Razduži“ (`barLabel`). Označeno odredište: pilula `primaryContainer`, ikona `onPrimaryContainer`. Tema i Odjava su u izborniku ikone računa gore desno. Traka se skriva dok je tipkovnica otvorena.
+Mobitel u portretu: donja traka s pet odredišta, naslov zaslona gore (osim na Početnoj, vidi dolje). Natpis za Razduživanje na traci je „Razduži“ (`barLabel`). Označeno odredište: pilula `primaryContainer`, ikona `onPrimaryContainer`. Tema i Odjava su u izborniku ikone računa gore desno. Traka se skriva dok je tipkovnica otvorena.
 
 Tablet u pejzažu: panel fiksno lijevo, 220dp. Tablet u portretu i mobitel u pejzažu: hamburger otvara isti panel kao modal, širina 240dp.
 
 Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka panela 72dp. Dno panela: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
+
+## Početna
+
+- Zaglavlje: `HomeHeader` (`#0B3A5C`), isto u obje teme. Logo bijeli, pozdrav (Dobro jutro / Dobar dan / Dobra večer) bijeli bold, ispod datum („Petak, 27. studenoga“) bijeli 80%.
+- Na mobitelu u portretu nema gornje trake: izbornik računa je bijel u zaglavlju. Ostale ljuske zadržavaju svoju traku.
+- Dvije kartice sažetka (Izdavanje, Razduživanje) prelaze donji rub zaglavlja. Pločica ikone je boja na 16%, ikona boja pomaknuta prema `onSurface`.
+- Odjeljak: naslov i „Sve“, pa kartica s najviše 6 redaka, grupirano po izletu („Bez izleta“). Više od 6: „Prikaži sve (N)“. Cijeli redak otvara zahtjev.
+- Redak: `Avatar` (`ui/Avatar.kt`), ime, strelica. Na Razduživanju `StatusChip` „N izlet/izleta vani“ kad je `excursionsWhileOut` > 0.
+
+`Avatar`: krug 40dp, inicijali (najviše dva). Boja iz popisa prema imenu, podloga 18%, tekst kao u `StatusChip`. TalkBack ga preskače, ime stoji pored.
 
 ## Kućica
 

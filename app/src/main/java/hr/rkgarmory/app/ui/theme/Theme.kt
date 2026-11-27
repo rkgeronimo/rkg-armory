@@ -19,6 +19,9 @@ val StatusBroken = Color(0xFFBA1A1A)
 val StatusLost = Color(0xFF7A3E12)
 val StatusWrittenOff = Color(0xFF5C6B76)
 
+/** Header of the Home screen, behind the white logo. Same in both themes. */
+val HomeHeader = Color(0xFF0B3A5C)
+
 private val LightColors = lightColorScheme(
     primary = Color(0xFF1A6BB5),
     onPrimary = Color.White,

@@ -234,35 +234,42 @@ private fun BottomBarShell(
     openReservationId: Long?,
     onOpenRequest: (Destination, Long) -> Unit,
 ) {
+    val accountMenu = @Composable {
+        AccountMenu(
+            darkTheme = darkTheme,
+            onToggleTheme = onToggleTheme,
+            onLogout = onLogout,
+        )
+    }
     Column(modifier = Modifier.fillMaxSize()) {
-        Surface(color = MaterialTheme.colorScheme.surface) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 64.dp)
-                    .padding(start = 20.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = selected.title,
-                    modifier = Modifier.weight(1f),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                AccountMenu(
-                    darkTheme = darkTheme,
-                    onToggleTheme = onToggleTheme,
-                    onLogout = onLogout,
-                )
+        // Home has its own header with the account menu in it.
+        if (selected != Destination.Home) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 64.dp)
+                        .padding(start = 20.dp, end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = selected.title,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    accountMenu()
+                }
             }
+            HorizontalDivider()
         }
-        HorizontalDivider()
         ShellContent(
             selected = selected,
             openReservationId = openReservationId,
             onOpenRequest = onOpenRequest,
             onSelect = onSelect,
             modifier = Modifier.weight(1f),
+            homeAccountMenu = accountMenu,
         )
         if (!WindowInsets.isImeVisible) {
             HorizontalDivider()
@@ -352,6 +359,7 @@ private fun ShellContent(
     onOpenRequest: (Destination, Long) -> Unit,
     onSelect: (Destination) -> Unit,
     modifier: Modifier = Modifier,
+    homeAccountMenu: (@Composable () -> Unit)? = null,
 ) {
     Box(
         modifier = modifier
@@ -364,6 +372,7 @@ private fun ShellContent(
                 onOpenReturns = { onOpenRequest(Destination.Returns, it) },
                 onShowIssuance = { onSelect(Destination.Issuance) },
                 onShowReturns = { onSelect(Destination.Returns) },
+                accountMenu = homeAccountMenu,
             )
             Destination.Issuance -> IssuanceScreen(openId = openReservationId)
             Destination.Returns -> ReturnsScreen(openId = openReservationId)

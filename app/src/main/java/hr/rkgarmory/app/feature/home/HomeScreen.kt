@@ -2,6 +2,7 @@ package hr.rkgarmory.app.feature.home
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,12 +17,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AssignmentReturn
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,23 +31,47 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hr.rkgarmory.app.R
 import hr.rkgarmory.app.remote.Reservation
+import hr.rkgarmory.app.ui.Avatar
+import hr.rkgarmory.app.ui.StatusChip
+import hr.rkgarmory.app.ui.theme.HomeHeader
+import hr.rkgarmory.app.ui.theme.StatusIssued
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
+/** How far the summary cards hang below the header; the rest of them overlaps it. */
+private val CardOverlap = 36.dp
+private const val HomeRowLimit = 6
+
+/**
+ * Header with the club logo, a greeting and the date; two summary cards
+ * over its lower edge; the waiting issuances and returns, grouped by
+ * excursion. [accountMenu] sits in the header where the shell has no top
+ * bar (phone).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HomeScreen(
@@ -53,6 +79,7 @@ internal fun HomeScreen(
     onOpenReturns: (Long) -> Unit,
     onShowIssuance: () -> Unit,
     onShowReturns: () -> Unit,
+    accountMenu: (@Composable () -> Unit)? = null,
     viewModel: HomeViewModel = viewModel(),
 ) {
     val pending = viewModel.pending
@@ -72,64 +99,80 @@ internal fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState()),
         ) {
-            if (viewModel.notice != null) {
-                Text(
-                    text = viewModel.notice.orEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SummaryCard(
-                    value = pending?.size?.toString() ?: "…",
-                    label = "Izdavanja",
-                    icon = Icons.Rounded.SwapHoriz,
-                    onClick = onShowIssuance,
-                )
-                SummaryCard(
-                    value = active?.size?.toString() ?: "…",
-                    label = "Razduživanje",
-                    icon = Icons.Rounded.AssignmentReturn,
-                    onClick = onShowReturns,
-                )
-            }
-            if (portrait) {
-                RequestCard(
-                    title = "Izdavanja",
-                    rows = pending,
-                    action = "Otvori izdavanje",
-                    onOpen = onOpenIssuance,
-                )
-                RequestCard(
-                    title = "Razduživanje",
-                    rows = active,
-                    action = "Otvori razduživanje",
-                    onOpen = onOpenReturns,
-                )
-            } else {
+            Box {
+                Column {
+                    HomeHero(accountMenu)
+                    Spacer(Modifier.height(CardOverlap))
+                }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .widthIn(max = 720.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    RequestCard(
-                        title = "Izdavanja",
+                    SummaryCard(
+                        value = pending?.size?.toString() ?: "…",
+                        label = "Izdavanje",
+                        icon = Icons.Rounded.SwapHoriz,
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onShowIssuance,
+                        modifier = Modifier.weight(1f),
+                    )
+                    SummaryCard(
+                        value = active?.size?.toString() ?: "…",
+                        label = "Razduživanje",
+                        icon = Icons.Rounded.AssignmentReturn,
+                        color = StatusIssued,
+                        onClick = onShowReturns,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                if (viewModel.notice != null) {
+                    Text(
+                        text = viewModel.notice.orEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                val issuance = @Composable { modifier: Modifier ->
+                    RequestSection(
+                        title = "Izdavanje",
                         rows = pending,
                         action = "Otvori izdavanje",
                         onOpen = onOpenIssuance,
-                        modifier = Modifier.weight(1f),
+                        onShowAll = onShowIssuance,
+                        modifier = modifier,
                     )
-                    RequestCard(
+                }
+                val returns = @Composable { modifier: Modifier ->
+                    RequestSection(
                         title = "Razduživanje",
                         rows = active,
                         action = "Otvori razduživanje",
                         onOpen = onOpenReturns,
-                        modifier = Modifier.weight(1f),
+                        onShowAll = onShowReturns,
+                        trailing = { reservation -> ExcursionsOut(reservation) },
+                        modifier = modifier,
                     )
+                }
+                if (portrait) {
+                    issuance(Modifier)
+                    returns(Modifier)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        issuance(Modifier.weight(1f))
+                        returns(Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -137,10 +180,60 @@ internal fun HomeScreen(
 }
 
 @Composable
+private fun HomeHero(accountMenu: (@Composable () -> Unit)?) {
+    val now = LocalDateTime.now()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(HomeHeader)
+            .padding(start = 20.dp, end = 8.dp, top = 16.dp, bottom = 24.dp + CardOverlap),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.logo_blue),
+                contentDescription = "Ronilački klub Geronimo",
+                modifier = Modifier.size(56.dp),
+                colorFilter = ColorFilter.tint(Color.White),
+            )
+            Spacer(Modifier.weight(1f))
+            if (accountMenu != null) {
+                CompositionLocalProvider(LocalContentColor provides Color.White) {
+                    accountMenu()
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = greeting(now.hour),
+            color = Color.White,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = dateLine(now),
+            color = Color.White.copy(alpha = 0.8f),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+private fun greeting(hour: Int): String = when (hour) {
+    in 5..10 -> "Dobro jutro"
+    in 11..17 -> "Dobar dan"
+    else -> "Dobra večer"
+}
+
+private val dateFormat = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.forLanguageTag("hr"))
+
+private fun dateLine(now: LocalDateTime): String =
+    now.format(dateFormat).replaceFirstChar { it.titlecase(Locale.forLanguageTag("hr")) }
+
+@Composable
 private fun SummaryCard(
     value: String,
     label: String,
     icon: ImageVector,
+    color: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -152,33 +245,31 @@ private fun SummaryCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.shapes.medium,
-                    ),
+                    .size(44.dp)
+                    .background(color.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = lerp(color, MaterialTheme.colorScheme.onSurface, 0.4f),
                 )
             }
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(
-                    value,
-                    style = MaterialTheme.typography.titleLarge,
+                    text = value,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    label,
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -188,33 +279,42 @@ private fun SummaryCard(
     }
 }
 
+/**
+ * Title with a "Sve" link, then up to [HomeRowLimit] reservations in one
+ * card, grouped by excursion. A row opens that reservation.
+ */
 @Composable
-private fun RequestCard(
+private fun RequestSection(
     title: String,
     rows: List<Reservation>?,
     action: String,
     onOpen: (Long) -> Unit,
+    onShowAll: () -> Unit,
     modifier: Modifier = Modifier,
+    trailing: @Composable (Reservation) -> Unit = {},
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            TextButton(onClick = onShowAll) {
+                Text("Sve", fontWeight = FontWeight.SemiBold)
             }
+        }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
             when {
                 rows == null -> Box(
                     modifier = Modifier
@@ -229,55 +329,98 @@ private fun RequestCard(
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                else -> Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = (homeItemHeight + 1.dp) * homeItemLimit)
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    rows
-                        .sortedWith(compareBy({ it.userName }, { it.excursion.orEmpty() }))
-                        .forEach { reservation ->
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(homeItemHeight)
-                                    .padding(start = 16.dp, end = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = homeLine(reservation),
-                                    modifier = Modifier.weight(1f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                else -> {
+                    val sorted = rows.sortedWith(
+                        compareBy({ it.excursion.isNullOrBlank() }, { it.excursion.orEmpty() }, { it.userName }),
+                    )
+                    sorted.take(HomeRowLimit)
+                        .groupBy { it.excursion?.takeIf(String::isNotBlank) ?: "Bez izleta" }
+                        .entries
+                        .forEachIndexed { index, (trip, group) ->
+                            if (index > 0) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                            Text(
+                                text = trip,
+                                modifier = Modifier.padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 12.dp,
+                                    bottom = 4.dp,
+                                ),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            group.forEach { reservation ->
+                                RequestRow(
+                                    reservation = reservation,
+                                    action = action,
+                                    onOpen = onOpen,
+                                    trailing = trailing,
                                 )
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary)
-                                        .clickable { onOpen(reservation.id) },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.ArrowForward,
-                                        contentDescription = action,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                }
                             }
                         }
+                    if (sorted.size > HomeRowLimit) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        TextButton(
+                            onClick = onShowAll,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                        ) {
+                            Text("Prikaži sve (${sorted.size})")
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-private val homeItemHeight = 56.dp
-private const val homeItemLimit = 5
+@Composable
+private fun RequestRow(
+    reservation: Reservation,
+    action: String,
+    onOpen: (Long) -> Unit,
+    trailing: @Composable (Reservation) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable(onClickLabel = action) { onOpen(reservation.id) }
+            .padding(start = 16.dp, end = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Avatar(reservation.userName)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = reservation.userName,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        trailing(reservation)
+        Icon(
+            Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
 
-private fun homeLine(reservation: Reservation): String {
-    val trip = reservation.excursion?.takeIf { it.isNotBlank() }
-    return if (trip == null) reservation.userName else "${reservation.userName} - $trip"
+/** Excursions the member signed up for while the gear is out; nothing when none. */
+@Composable
+private fun ExcursionsOut(reservation: Reservation) {
+    val count = reservation.excursionsWhileOut?.takeIf { it > 0 } ?: return
+    val word = if (count % 10 == 1 && count % 100 != 11) "izlet" else "izleta"
+    StatusChip(
+        text = "$count $word vani",
+        color = StatusIssued,
+        modifier = Modifier.padding(start = 8.dp),
+    )
 }
