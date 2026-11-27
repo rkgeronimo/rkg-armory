@@ -17,9 +17,13 @@ Svijetla tema, bijela pozadina.
 | Izdano | `StatusIssued` | `#D46A52` |
 | Sekundarni gumb (Odustani) | `secondary` | `#0E4E78` |
 
-Pilula statusa: puna boja statusa, svijetli tekst.
+Status: `StatusChip` (`ui/StatusChip.kt`). Podloga je boja statusa na 16%, točka i tekst su boja statusa pomaknuta prema `onSurface`. Nema pune pilule sa svijetlim tekstom.
 
 Označena stavka trake u tamnoj temi: `#334155`.
+
+## Font
+
+Plus Jakarta Sans u svim stilovima (`AppTypography` u `Theme.kt`). Jedan varijabilni file `res/font/plus_jakarta_sans.ttf`, težine 400, 500, 600 i 700. Licenca (OFL) je u `assets/licenses/`.
 
 ## Mjere
 
@@ -49,17 +53,19 @@ Dodir kućice označava. Dodir ostatka reda radi svoju radnju.
 
 ## Kartica
 
-Svaka kartica: sjena 4dp. `CardDefaults.cardElevation(defaultElevation = 4.dp)`.
+Kartica popisa u portretu nema sjenu. Obrub 1dp `outlineVariant`: `border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)`.
+
+Kartica tablice, sažetka i obrasca: sjena 1dp i isti obrub. Kartica Prijave zasad ima sjenu 4dp.
 
 Popis u portretu je kartica, u pejzažu tablica.
 
 Kartica popisa u portretu (Oprema): bijela `surface`, visina najmanje 96dp. Razmak 10dp.
 
-Sažetak na Izdavanju: ispuna `primaryContainer`, obrub 2dp `primary`, ista sjena 4dp.
+Sažetak na Izdavanju: kartica `surface`, zaglavlje u `primaryContainer`.
 
-Redak Opreme, sve u `bodyLarge`. Natpis sivi, vrijednost tamna medium. Tri linije:
+Redak Opreme u `bodyLarge`, status u `labelLarge`. Natpis sivi, vrijednost tamna medium. Tri linije:
 
-1. lijevo natpis Šifra i šifra, sredina vrsta, desno pilula
+1. lijevo natpis Šifra i šifra, sredina vrsta, desno `StatusChip`
 2. natpis Veličina, veličina
 3. zadužio/la i datum, samo ako je Izdano
 

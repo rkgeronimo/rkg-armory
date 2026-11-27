@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +41,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +52,7 @@ import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.remote.equipmentKeys
 import hr.rkgarmory.app.remote.pieceMark
 import hr.rkgarmory.app.ui.SegmentedTabs
+import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.StatusInStock
 import hr.rkgarmory.app.ui.theme.StatusIssued
 import hr.rkgarmory.app.ui.theme.StatusWrittenOff
@@ -242,7 +241,7 @@ private fun ReservationCard(reservation: Reservation, onOpen: () -> Unit) {
             .heightIn(min = 96.dp)
             .clickable(onClick = onOpen),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -384,18 +383,5 @@ internal fun ReservationPill(reservation: Reservation) {
         2 -> StatusInStock
         else -> StatusWrittenOff
     }
-    Surface(
-        color = color,
-        shape = RoundedCornerShape(999.dp),
-    ) {
-        Text(
-            text = reservation.status,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = Color.White,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            softWrap = false,
-            fontWeight = FontWeight.Medium,
-        )
-    }
+    StatusChip(reservation.status, color)
 }

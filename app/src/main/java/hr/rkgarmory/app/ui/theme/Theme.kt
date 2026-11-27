@@ -6,6 +6,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import hr.rkgarmory.app.R
 
 val StatusInStock = Color(0xFF2B7FD4)
 val StatusIssued = Color(0xFFD46A52)
@@ -53,6 +59,41 @@ private val DarkColors = darkColorScheme(
     error = Color(0xFFFCA5A5),
 )
 
+/** One variable font file, one entry per weight the app uses. */
+@OptIn(ExperimentalTextApi::class)
+private fun jakarta(weight: Int) = Font(
+    resId = R.font.plus_jakarta_sans,
+    weight = FontWeight(weight),
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+)
+
+private val PlusJakartaSans = FontFamily(
+    jakarta(400),
+    jakarta(500),
+    jakarta(600),
+    jakarta(700),
+)
+
+private val AppTypography = Typography().let { base ->
+    Typography(
+        displayLarge = base.displayLarge.copy(fontFamily = PlusJakartaSans),
+        displayMedium = base.displayMedium.copy(fontFamily = PlusJakartaSans),
+        displaySmall = base.displaySmall.copy(fontFamily = PlusJakartaSans),
+        headlineLarge = base.headlineLarge.copy(fontFamily = PlusJakartaSans),
+        headlineMedium = base.headlineMedium.copy(fontFamily = PlusJakartaSans),
+        headlineSmall = base.headlineSmall.copy(fontFamily = PlusJakartaSans),
+        titleLarge = base.titleLarge.copy(fontFamily = PlusJakartaSans),
+        titleMedium = base.titleMedium.copy(fontFamily = PlusJakartaSans),
+        titleSmall = base.titleSmall.copy(fontFamily = PlusJakartaSans),
+        bodyLarge = base.bodyLarge.copy(fontFamily = PlusJakartaSans),
+        bodyMedium = base.bodyMedium.copy(fontFamily = PlusJakartaSans),
+        bodySmall = base.bodySmall.copy(fontFamily = PlusJakartaSans),
+        labelLarge = base.labelLarge.copy(fontFamily = PlusJakartaSans),
+        labelMedium = base.labelMedium.copy(fontFamily = PlusJakartaSans),
+        labelSmall = base.labelSmall.copy(fontFamily = PlusJakartaSans),
+    )
+}
+
 @Composable
 fun RkgArmoryTheme(
     darkTheme: Boolean = false,
@@ -60,7 +101,7 @@ fun RkgArmoryTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = Typography(),
+        typography = AppTypography,
         content = content,
     )
 }

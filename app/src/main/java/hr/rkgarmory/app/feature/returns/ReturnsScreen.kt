@@ -210,7 +210,7 @@ internal fun ReturnsScreen(openId: Long? = null) {
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.surface,
                                 ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                             ) {
                                 Row(
                                     modifier = Modifier

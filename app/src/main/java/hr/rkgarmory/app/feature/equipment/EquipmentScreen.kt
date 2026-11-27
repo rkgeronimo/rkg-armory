@@ -41,7 +41,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +51,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.ui.SegmentedTabs
+import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.StatusBroken
 import hr.rkgarmory.app.ui.theme.StatusInStock
 import hr.rkgarmory.app.ui.theme.StatusIssued
@@ -431,7 +430,7 @@ private fun PieceCards(
                     .heightIn(min = 96.dp)
                     .clickable { onOpen(piece.id) },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -611,18 +610,5 @@ private fun StatusPill(status: String) {
         "Otpisano" -> StatusWrittenOff
         else -> StatusInStock
     }
-    Surface(
-        color = color,
-        shape = RoundedCornerShape(999.dp),
-    ) {
-        Text(
-            text = status,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            color = Color.White,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            softWrap = false,
-            fontWeight = FontWeight.Medium,
-        )
-    }
+    StatusChip(status, color)
 }
