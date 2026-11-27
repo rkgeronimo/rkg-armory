@@ -98,7 +98,8 @@ internal fun ReservationsScreen() {
         val stateOk = stateFilter == AllStates || reservation.state.toString() == stateFilter
         val textOk = text.isEmpty() ||
             reservation.userName.contains(text, ignoreCase = true) ||
-            reservation.excursion.orEmpty().contains(text, ignoreCase = true)
+            reservation.excursion.orEmpty().contains(text, ignoreCase = true) ||
+            reservation.equipment.values.any { it.code.orEmpty().contains(text, ignoreCase = true) }
         stateOk && textOk
     }
     val pageCount = maxOf(1, (visible.size + ReservationPageSize - 1) / ReservationPageSize)
@@ -162,7 +163,7 @@ internal fun ReservationsScreen() {
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
-                    placeholder = { Text("Traži ime ili izlet") },
+                    placeholder = { Text("Traži ime, izlet ili šifru") },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
