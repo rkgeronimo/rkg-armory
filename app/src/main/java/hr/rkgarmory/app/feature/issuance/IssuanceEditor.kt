@@ -26,11 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Backspace
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import hr.rkgarmory.app.feature.equipment.typeTabLabel
 import hr.rkgarmory.app.feature.inventory.inventorySizes
 import hr.rkgarmory.app.feature.inventory.regulatorTypes
+import hr.rkgarmory.app.ui.FormActions
 
 @Composable
 internal fun IssuanceEditor(
@@ -322,54 +320,13 @@ private fun IssuanceActions(
     onCancel: () -> Unit,
     onIssue: () -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = onCancel,
-                enabled = !saving,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-            ) {
-                Text("Odustani")
-            }
-            Spacer(Modifier.width(12.dp))
-            Button(
-                onClick = { if (!saving) onIssue() },
-                enabled = enabled || saving,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 2.dp,
-                    pressedElevation = 0.dp,
-                    disabledElevation = 0.dp,
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    disabledContainerColor = MaterialTheme.colorScheme.outline,
-                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            ) {
-                if (saving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text(
-                        text = "Izdaj opremu",
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-    }
+    FormActions(
+        saving = saving,
+        canSave = enabled,
+        onCancel = onCancel,
+        onSave = onIssue,
+        saveLabel = "Izdaj opremu",
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

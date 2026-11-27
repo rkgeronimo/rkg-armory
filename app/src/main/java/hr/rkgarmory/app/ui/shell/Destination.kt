@@ -1,14 +1,13 @@
 package hr.rkgarmory.app.ui.shell
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AssignmentReturn
-import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material.icons.rounded.EventNote
-import androidx.compose.material.icons.rounded.FactCheck
-import androidx.compose.material.icons.rounded.Inventory2
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.ViewList
 import androidx.compose.ui.graphics.vector.ImageVector
+import hr.rkgarmory.app.ui.BoxIcon
+import hr.rkgarmory.app.ui.CalendarIcon
+import hr.rkgarmory.app.ui.ChecklistIcon
+import hr.rkgarmory.app.ui.HomeIcon
+import hr.rkgarmory.app.ui.IssueIcon
+import hr.rkgarmory.app.ui.ListIcon
+import hr.rkgarmory.app.ui.ReturnIcon
 
 internal enum class Destination(
     val title: String,
@@ -18,31 +17,31 @@ internal enum class Destination(
 ) {
     Home(
         title = "Početna",
-        icon = Icons.Rounded.Dashboard,
+        icon = HomeIcon,
     ),
     Issuance(
         title = "Izdavanje",
-        icon = Icons.Rounded.SwapHoriz,
+        icon = IssueIcon,
     ),
     Returns(
         title = "Razduživanje",
-        icon = Icons.Rounded.AssignmentReturn,
+        icon = ReturnIcon,
         barLabel = "Razduži",
     ),
     Reservations(
         title = "Rezervacije",
-        icon = Icons.Rounded.EventNote,
+        icon = CalendarIcon,
     ),
     Equipment(
         title = "Oprema",
-        icon = Icons.Rounded.Inventory2,
+        icon = BoxIcon,
     ),
     Inventory(
         title = "Inventura",
-        icon = Icons.Rounded.FactCheck,
+        icon = ChecklistIcon,
     ),
     InventoryPopis(
         title = "Popis inventure",
-        icon = Icons.Rounded.ViewList,
+        icon = ListIcon,
     ),
 }

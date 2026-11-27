@@ -1,12 +1,15 @@
 package hr.rkgarmory.app.ui.shell
 
 import android.content.res.Configuration
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.DarkMode
@@ -59,6 +63,8 @@ import hr.rkgarmory.app.feature.inventory.InventoryScreen
 import hr.rkgarmory.app.feature.issuance.IssuanceScreen
 import hr.rkgarmory.app.feature.reservations.ReservationsScreen
 import hr.rkgarmory.app.feature.returns.ReturnsScreen
+import hr.rkgarmory.app.ui.SystemBarIcons
+import hr.rkgarmory.app.ui.theme.HomeHeader
 import kotlinx.coroutines.launch
 
 @Composable
@@ -85,59 +91,74 @@ internal fun AppShell(
         selected = destination
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding(),
-    ) {
-        if (phone && isPortrait) {
-            BottomBarShell(
-                selected = selected,
-                destinations = destinations,
-                darkTheme = darkTheme,
-                onSelect = select,
-                onToggleTheme = onToggleTheme,
-                onLogout = onLogout,
-                openReservationId = openReservationId,
-                onOpenRequest = openRequest,
-            )
-        } else if (isPortrait || phone) {
-            DrawerShell(
-                selected = selected,
-                destinations = destinations,
-                darkTheme = darkTheme,
-                onSelect = select,
-                onToggleTheme = onToggleTheme,
-                onLogout = onLogout,
-                openReservationId = openReservationId,
-                onOpenRequest = openRequest,
-            )
-        } else {
-            Row(modifier = Modifier.fillMaxSize()) {
-                Surface(color = MaterialTheme.colorScheme.surface) {
-                    NavigationPanel(
-                        selected = selected,
-                        destinations = destinations,
-                        darkTheme = darkTheme,
-                        onSelect = select,
-                        onToggleTheme = onToggleTheme,
-                        onLogout = onLogout,
-                        modifier = Modifier.width(220.dp),
-                    )
-                }
-                VerticalDivider(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-                ShellContent(
+    // Home on a phone has a navy header; the status bar above it takes the same colour.
+    val homeHeaderOnTop = phone && isPortrait && selected == Destination.Home
+    SystemBarIcons(
+        darkBehindStatusBar = darkTheme || homeHeaderOnTop,
+        darkBehindNavigationBar = darkTheme,
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsTopHeight(WindowInsets.statusBars)
+                .background(if (homeHeaderOnTop) HomeHeader else MaterialTheme.colorScheme.surface),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
+        ) {
+            if (phone && isPortrait) {
+                BottomBarShell(
                     selected = selected,
+                    destinations = destinations,
+                    darkTheme = darkTheme,
+                    onSelect = select,
+                    onToggleTheme = onToggleTheme,
+                    onLogout = onLogout,
                     openReservationId = openReservationId,
                     onOpenRequest = openRequest,
-                    onSelect = select,
-                    modifier = Modifier.weight(1f),
                 )
+            } else if (isPortrait || phone) {
+                DrawerShell(
+                    selected = selected,
+                    destinations = destinations,
+                    darkTheme = darkTheme,
+                    onSelect = select,
+                    onToggleTheme = onToggleTheme,
+                    onLogout = onLogout,
+                    openReservationId = openReservationId,
+                    onOpenRequest = openRequest,
+                )
+            } else {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Surface(color = MaterialTheme.colorScheme.surface) {
+                        NavigationPanel(
+                            selected = selected,
+                            destinations = destinations,
+                            darkTheme = darkTheme,
+                            onSelect = select,
+                            onToggleTheme = onToggleTheme,
+                            onLogout = onLogout,
+                            modifier = Modifier.width(220.dp),
+                        )
+                    }
+                    VerticalDivider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    ShellContent(
+                        selected = selected,
+                        openReservationId = openReservationId,
+                        onOpenRequest = openRequest,
+                        onSelect = select,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }
@@ -366,20 +387,23 @@ private fun ShellContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        when (selected) {
-            Destination.Home -> HomeScreen(
-                onOpenIssuance = { onOpenRequest(Destination.Issuance, it) },
-                onOpenReturns = { onOpenRequest(Destination.Returns, it) },
-                onShowIssuance = { onSelect(Destination.Issuance) },
-                onShowReturns = { onSelect(Destination.Returns) },
-                accountMenu = homeAccountMenu,
-            )
-            Destination.Issuance -> IssuanceScreen(openId = openReservationId)
-            Destination.Returns -> ReturnsScreen(openId = openReservationId)
-            Destination.Reservations -> ReservationsScreen()
-            Destination.Equipment -> EquipmentScreen()
-            Destination.Inventory -> InventoryScreen()
-            Destination.InventoryPopis -> InventoryPopisScreen()
+        // A short fade between screens instead of a hard cut.
+        Crossfade(targetState = selected, animationSpec = tween(180), label = "screen") { destination ->
+            when (destination) {
+                Destination.Home -> HomeScreen(
+                    onOpenIssuance = { onOpenRequest(Destination.Issuance, it) },
+                    onOpenReturns = { onOpenRequest(Destination.Returns, it) },
+                    onShowIssuance = { onSelect(Destination.Issuance) },
+                    onShowReturns = { onSelect(Destination.Returns) },
+                    accountMenu = homeAccountMenu,
+                )
+                Destination.Issuance -> IssuanceScreen(openId = openReservationId)
+                Destination.Returns -> ReturnsScreen(openId = openReservationId)
+                Destination.Reservations -> ReservationsScreen()
+                Destination.Equipment -> EquipmentScreen()
+                Destination.Inventory -> InventoryScreen()
+                Destination.InventoryPopis -> InventoryPopisScreen()
+            }
         }
     }
 }

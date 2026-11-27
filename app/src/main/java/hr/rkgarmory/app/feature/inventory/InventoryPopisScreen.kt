@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.feature.equipment.pieceConditions
+import hr.rkgarmory.app.ui.FormActions
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -459,43 +460,24 @@ private fun PopisEdit(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(28.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = onCancel,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
+        FormActions(
+            saving = false,
+            canSave = entry.isQuantity() || (
+                (entry.type != "Odijelo" || thickness in suitThicknesses) &&
+                    (entry.type != "Kompenzator" || gearSize in inventorySizes(entry.type))
                 ),
-            ) {
-                Text("Odustani")
-            }
-            Button(
-                onClick = {
-                    onSave(
-                        code.trim(),
-                        condition,
-                        type,
-                        quantity,
-                        note,
-                        thickness,
-                        if (entry.type == "Kompenzator") gearSize else "",
-                    )
-                },
-                enabled = entry.isQuantity() || (
-                    (entry.type != "Odijelo" || thickness in suitThicknesses) &&
-                        (entry.type != "Kompenzator" || gearSize in inventorySizes(entry.type))
-                    ),
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text("Spremi", fontWeight = FontWeight.SemiBold)
-            }
-        }
+            onCancel = onCancel,
+            onSave = {
+                onSave(
+                    code.trim(),
+                    condition,
+                    type,
+                    quantity,
+                    note,
+                    thickness,
+                    if (entry.type == "Kompenzator") gearSize else "",
+                )
+            },
+        )
     }
 }

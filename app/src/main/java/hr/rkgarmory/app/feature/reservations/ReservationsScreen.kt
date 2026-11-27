@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,10 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.feature.equipment.PageBar
 import hr.rkgarmory.app.remote.Reservation
+import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.remote.equipmentKeys
 import hr.rkgarmory.app.remote.pieceMark
-import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.ui.Avatar
+import hr.rkgarmory.app.ui.CalendarIcon
+import hr.rkgarmory.app.ui.EmptyState
 import hr.rkgarmory.app.ui.FilterChips
 import hr.rkgarmory.app.ui.SearchField
 import hr.rkgarmory.app.ui.StatusChip
@@ -196,9 +200,9 @@ internal fun ReservationsScreen() {
                         .verticalScroll(rememberScrollState()),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = "Nema rezervacija",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    EmptyState(
+                        text = if (text.isEmpty()) "Nema rezervacija" else "Nema pronađenih",
+                        icon = if (text.isEmpty()) CalendarIcon else Icons.Rounded.SearchOff,
                     )
                 }
             } else if (phone) {
@@ -210,10 +214,10 @@ internal fun ReservationsScreen() {
                 ) {
                     groups.forEach { (trip, group) ->
                         stickyHeader(key = "header:$trip") {
-                            GroupHeader(trip, group.size)
+                            GroupHeader(trip, group.size, modifier = Modifier.animateItem())
                         }
                         item(key = "group:$trip") {
-                            ReservationGroup(group, onOpen = { editingId = it })
+                            ReservationGroup(group, onOpen = { editingId = it }, modifier = Modifier.animateItem())
                         }
                     }
                 }
@@ -237,9 +241,9 @@ internal fun ReservationsScreen() {
 
 /** Excursion name over its card; stays on top while its rows scroll. */
 @Composable
-private fun GroupHeader(trip: String, count: Int) {
+private fun GroupHeader(trip: String, count: Int, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
@@ -264,9 +268,13 @@ private fun GroupHeader(trip: String, count: Int) {
 
 /** One card per excursion, a row per reservation. */
 @Composable
-private fun ReservationGroup(reservations: List<Reservation>, onOpen: (Long) -> Unit) {
+private fun ReservationGroup(
+    reservations: List<Reservation>,
+    onOpen: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

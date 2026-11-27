@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.remote.StaffUser
+import hr.rkgarmory.app.ui.EmptyState
+import hr.rkgarmory.app.ui.IssueIcon
 import hr.rkgarmory.app.ui.RequestGroups
 import hr.rkgarmory.app.ui.SearchField
 
@@ -151,10 +154,9 @@ internal fun IssuanceScreen(openId: Long? = null) {
                                 .verticalScroll(rememberScrollState()),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
+                            EmptyState(
                                 text = if (query.isBlank()) "Nema zahtjeva" else "Nema pronađenih",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyLarge,
+                                icon = if (query.isBlank()) IssueIcon else Icons.Rounded.SearchOff,
                             )
                         }
                     } else {

@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.rkgarmory.app.BuildConfig
 import hr.rkgarmory.app.R
+import hr.rkgarmory.app.ui.SystemBarIcons
 
 /** Dark wash over the photo, strongest where the white title sits. */
 private val photoScrim = Brush.verticalGradient(
@@ -89,6 +91,12 @@ internal fun LoginScreen(
     val configuration = LocalConfiguration.current
     val portrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val phone = configuration.smallestScreenWidthDp < 600
+    // Dark icons over the bright water at the top. At the bottom sits the sheet
+    // in portrait and the darkest part of the wash in landscape.
+    SystemBarIcons(
+        darkBehindStatusBar = false,
+        darkBehindNavigationBar = !portrait || MaterialTheme.colorScheme.surface.luminance() < 0.5f,
+    )
 
     Box(
         modifier = Modifier

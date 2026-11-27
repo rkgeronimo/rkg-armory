@@ -1,0 +1,52 @@
+package hr.rkgarmory.app.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+
+/** An empty list: the screen's icon in a soft circle and one line of text. */
+@Composable
+internal fun EmptyState(
+    text: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(30.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}

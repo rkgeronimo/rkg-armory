@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -61,9 +62,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.remote.StaffSession
+import hr.rkgarmory.app.ui.BoxIcon
+import hr.rkgarmory.app.ui.EmptyState
 import hr.rkgarmory.app.ui.FilterChips
 import hr.rkgarmory.app.ui.SearchField
 import hr.rkgarmory.app.ui.StatusChip
@@ -239,9 +243,9 @@ internal fun EquipmentScreen() {
                         .verticalScroll(rememberScrollState()),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = "Nema komada",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    EmptyState(
+                        text = if (query.isBlank()) "Nema komada" else "Nema pronađenih",
+                        icon = if (query.isBlank()) BoxIcon else Icons.Rounded.SearchOff,
                     )
                 }
             } else if (phone) {
@@ -421,6 +425,7 @@ private fun PieceList(
             val bottom = if (index == pieces.lastIndex) 16.dp else 0.dp
             Column(
                 modifier = Modifier
+                    .animateItem()
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(top, top, bottom, bottom))
                     .background(MaterialTheme.colorScheme.surface),
@@ -498,10 +503,10 @@ private fun PieceRow(piece: Piece, onOpen: () -> Unit) {
 
 /** First two letters of the equipment type in a tinted square. */
 @Composable
-private fun TypeTile(type: String) {
+internal fun TypeTile(type: String, size: Dp = 44.dp) {
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(size)
             .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(12.dp))
             .clearAndSetSemantics {},
         contentAlignment = Alignment.Center,
@@ -620,7 +625,7 @@ private fun PageButton(
 }
 
 @Composable
-private fun StatusPill(status: String) {
+internal fun StatusPill(status: String) {
     val color = when (status) {
         StatusIssuedLabel -> StatusIssued
         "Neispravno" -> StatusBroken

@@ -22,9 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AssignmentReturn
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,8 +39,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,6 +57,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.R
 import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.ui.Avatar
+import hr.rkgarmory.app.ui.IssueIcon
+import hr.rkgarmory.app.ui.ReturnIcon
 import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.HomeHeader
 import hr.rkgarmory.app.ui.theme.StatusIssued
@@ -117,7 +121,7 @@ internal fun HomeScreen(
                     SummaryCard(
                         value = pending?.size?.toString() ?: "…",
                         label = "Izdavanje",
-                        icon = Icons.Rounded.SwapHoriz,
+                        icon = IssueIcon,
                         color = MaterialTheme.colorScheme.primary,
                         onClick = onShowIssuance,
                         modifier = Modifier.weight(1f),
@@ -125,7 +129,7 @@ internal fun HomeScreen(
                     SummaryCard(
                         value = active?.size?.toString() ?: "…",
                         label = "Razduživanje",
-                        icon = Icons.Rounded.AssignmentReturn,
+                        icon = ReturnIcon,
                         color = StatusIssued,
                         onClick = onShowReturns,
                         modifier = Modifier.weight(1f),
@@ -186,6 +190,16 @@ private fun HomeHero(accountMenu: (@Composable () -> Unit)?) {
         modifier = Modifier
             .fillMaxWidth()
             .background(HomeHeader)
+            .clipToBounds()
+            .drawBehind {
+                // Faint ring off the top right corner, as in the mockup.
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.06f),
+                    radius = 96.dp.toPx(),
+                    center = Offset(size.width - 50.dp.toPx(), 60.dp.toPx()),
+                    style = Stroke(width = 28.dp.toPx()),
+                )
+            }
             .padding(start = 20.dp, end = 8.dp, top = 16.dp, bottom = 24.dp + CardOverlap),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

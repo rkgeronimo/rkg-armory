@@ -24,10 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,7 +61,10 @@ import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.remote.excursionsWhileOutText
 import hr.rkgarmory.app.remote.openPieces
 import hr.rkgarmory.app.remote.pieceTitle
+import hr.rkgarmory.app.ui.EmptyState
+import hr.rkgarmory.app.ui.FormActions
 import hr.rkgarmory.app.ui.RequestGroups
+import hr.rkgarmory.app.ui.ReturnIcon
 import hr.rkgarmory.app.ui.SearchField
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -169,10 +171,9 @@ internal fun ReturnsScreen(openId: Long? = null) {
                                 .verticalScroll(rememberScrollState()),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
+                            EmptyState(
                                 text = if (query.isBlank()) "Nema zahtjeva" else "Nema pronađenih",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyLarge,
+                                icon = if (query.isBlank()) ReturnIcon else Icons.Rounded.SearchOff,
                             )
                         }
                     } else {
@@ -213,61 +214,20 @@ internal fun ReturnsScreen(openId: Long? = null) {
                     enabled = !viewModel.saving,
                 )
                 Spacer(Modifier.height(16.dp))
-                Row(
+                FormActions(
+                    saving = viewModel.saving,
+                    canSave = marked || newDonation != null,
+                    onCancel = { close() },
+                    onSave = {
+                        viewModel.save(selected.id, newDonation) { stillOpen ->
+                            if (!stillOpen) close()
+                        }
+                    },
                     modifier = Modifier
                         .widthIn(max = 720.dp)
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                ) {
-                    Button(
-                        onClick = { close() },
-                        enabled = !viewModel.saving,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    ) {
-                        Text("Odustani")
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Button(
-                        onClick = {
-                            if (viewModel.saving) return@Button
-                            viewModel.save(selected.id, newDonation) { stillOpen ->
-                                if (!stillOpen) close()
-                            }
-                        },
-                        enabled = marked || newDonation != null || viewModel.saving,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp,
-                            pressedElevation = 0.dp,
-                            disabledElevation = 0.dp,
-                        ),
-                        colors = ButtonDefaults.buttonColors(
-                            disabledContainerColor = MaterialTheme.colorScheme.outline,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    ) {
-                        if (viewModel.saving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Text("Spremi", fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
+                )
             }
         }
     }
