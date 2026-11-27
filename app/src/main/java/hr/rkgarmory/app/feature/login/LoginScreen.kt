@@ -267,7 +267,7 @@ private fun LoginForm(
             singleLine = true,
             enabled = !busy,
             label = { Text("Korisnik") },
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = loginFieldColors(),
         )
         Spacer(Modifier.height(12.dp))
@@ -292,7 +292,7 @@ private fun LoginForm(
                     )
                 }
             },
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = loginFieldColors(),
         )
         if (error != null) {
@@ -310,7 +310,7 @@ private fun LoginForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (compact) 48.dp else 56.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
         ) {
             if (busy) {
                 CircularProgressIndicator(

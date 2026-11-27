@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -33,15 +33,24 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +62,8 @@ import hr.rkgarmory.app.feature.equipment.typeTabLabel
 import hr.rkgarmory.app.feature.inventory.inventorySizes
 import hr.rkgarmory.app.feature.inventory.regulatorTypes
 import hr.rkgarmory.app.ui.FormActions
+import hr.rkgarmory.app.ui.ListIcon
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun IssuanceEditor(
@@ -231,85 +242,162 @@ private fun CompactIssuanceEditor(
     onCancel: () -> Unit,
     onIssue: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-        ) {
-        Text(
-            text = "OPREMA",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-        )
-        loanEquipmentTypes.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { equipment ->
-                    EquipmentChoice(
-                        equipment = equipment,
-                        selected = equipment == selectedEquipment,
-                        value = equipmentValues[equipment].orEmpty(),
-                        size = equipmentSizes[equipment].orEmpty(),
-                        requested = requested[equipment] ?: "—",
-                        compact = true,
-                        onClick = { onEquipmentSelected(equipment) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                repeat(3 - row.size) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-        val typed = equipmentValues[selectedEquipment].orEmpty()
-        EquipmentCodeInput(
-            value = loanField(
-                selectedEquipment,
-                equipmentSizes[selectedEquipment].orEmpty(),
-                typed,
-            ),
-            onClear = { onClearEquipment(selectedEquipment) },
-            clearEnabled = typed.isNotEmpty() ||
-                equipmentSizes[selectedEquipment].orEmpty().isNotEmpty(),
-            placeholder = if (selectedEquipment == LoanOlovo) "Količina" else "Oznaka opreme",
-        )
-        Spacer(Modifier.height(8.dp))
-        EquipmentSizeSelector(
-            equipment = selectedEquipment,
-            selectedSize = equipmentSizes[selectedEquipment],
-            onSizeSelected = { equipmentSizes[selectedEquipment] = it },
-        )
-        NumericKeypad(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(),
-            onKey = { key -> onKey(selectedEquipment, key) },
-        )
-        Spacer(Modifier.height(8.dp))
-        IssuanceSummary(
+    // Tall enough: equipment choice scrolls on top while the code field,
+    // keypad and buttons stay fixed below, so no key ever sits under a
+    // button. Too short (small phone, keyboard up for the member search):
+    // the keypad scrolls with the rest and only the buttons stay. The
+    // summary table opens in a bottom sheet from the key under 7.
+    var showSummary by rememberSaveable { mutableStateOf(false) }
+    if (showSummary) {
+        SummarySheet(
             equipmentValues = equipmentValues,
             equipmentSizes = equipmentSizes,
             requested = requested,
+            onClose = { showSummary = false },
         )
+    }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val keypadFixed = maxHeight >= CompactKeypadMinHeight
+        val choices: @Composable () -> Unit = {
+            Text(
+                text = "OPREMA",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            )
+            loanEquipmentTypes.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { equipment ->
+                        EquipmentChoice(
+                            equipment = equipment,
+                            selected = equipment == selectedEquipment,
+                            value = equipmentValues[equipment].orEmpty(),
+                            size = equipmentSizes[equipment].orEmpty(),
+                            requested = requested[equipment] ?: "—",
+                            compact = true,
+                            onClick = { onEquipmentSelected(equipment) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    repeat(3 - row.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
         }
-        Spacer(Modifier.height(10.dp))
-        IssuanceActions(
-            enabled = canIssue && loanEquipmentTypes.any {
-                loanReady(it, equipmentSizes[it].orEmpty(), equipmentValues[it].orEmpty())
-            },
-            saving = saving,
-            onCancel = onCancel,
-            onIssue = onIssue,
-        )
-        Spacer(Modifier.height(16.dp))
+        val entry: @Composable () -> Unit = {
+            Spacer(Modifier.height(12.dp))
+            val typed = equipmentValues[selectedEquipment].orEmpty()
+            EquipmentCodeInput(
+                value = loanField(
+                    selectedEquipment,
+                    equipmentSizes[selectedEquipment].orEmpty(),
+                    typed,
+                ),
+                onClear = { onClearEquipment(selectedEquipment) },
+                clearEnabled = typed.isNotEmpty() ||
+                    equipmentSizes[selectedEquipment].orEmpty().isNotEmpty(),
+                placeholder = if (selectedEquipment == LoanOlovo) "Količina" else "Oznaka opreme",
+            )
+            Spacer(Modifier.height(8.dp))
+            EquipmentSizeSelector(
+                equipment = selectedEquipment,
+                selectedSize = equipmentSizes[selectedEquipment],
+                onSizeSelected = { equipmentSizes[selectedEquipment] = it },
+            )
+            NumericKeypad(
+                modifier = Modifier.fillMaxWidth(),
+                keyHeight = 48.dp,
+                onSummary = { showSummary = true },
+                onKey = { key -> onKey(selectedEquipment, key) },
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                choices()
+                if (!keypadFixed) entry()
+            }
+            if (keypadFixed) entry()
+            Spacer(Modifier.height(12.dp))
+            IssuanceActions(
+                enabled = canIssue && loanEquipmentTypes.any {
+                    loanReady(it, equipmentSizes[it].orEmpty(), equipmentValues[it].orEmpty())
+                },
+                saving = saving,
+                onCancel = onCancel,
+                onIssue = onIssue,
+            )
+        }
+    }
+}
+
+/**
+ * Below this editor height the fixed code field, size row, keypad and
+ * buttons (about 470dp) would squeeze the three rows of equipment away.
+ */
+private val CompactKeypadMinHeight = 600.dp
+
+/**
+ * The issuance summary (requested and entered per equipment) in a bottom
+ * sheet. Closes by dragging down, tapping outside or "Zatvori".
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SummarySheet(
+    equipmentValues: Map<String, String>,
+    equipmentSizes: Map<String, String>,
+    requested: Map<String, String>,
+    onClose: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Pregled opreme",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 4.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                TextButton(
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            // A drag can cancel the hide; then the sheet stays.
+                            if (!sheetState.isVisible) onClose()
+                        }
+                    },
+                ) {
+                    Text("Zatvori", fontWeight = FontWeight.SemiBold)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            IssuanceSummary(
+                equipmentValues = equipmentValues,
+                equipmentSizes = equipmentSizes,
+                requested = requested,
+            )
+        }
     }
 }
 
@@ -339,8 +427,7 @@ private fun EquipmentCodeInput(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
         OutlinedTextField(
@@ -382,7 +469,8 @@ private fun EquipmentCodeInput(
 }
 
 private val FilledEquipment = Color(0xFF1B7F4E)
-private val WantedEquipment = Color(0xFFFFF3C4)
+/** Requested but not entered yet; a tint so its text reads in both themes. */
+private val WantedEquipment = Color(0xFFE0A800)
 
 /** "Odijelo (5)" when a size was requested, see [requestedMark]. */
 private fun choiceLabel(equipment: String, requested: String): String {
@@ -407,15 +495,15 @@ private fun EquipmentChoice(
     val wanted = requested != "—"
     val label = choiceLabel(equipment, requested)
     val container = when {
-        filled -> FilledEquipment
+        filled -> FilledEquipment.copy(alpha = 0.16f)
         selected -> MaterialTheme.colorScheme.primary
-        wanted -> WantedEquipment
+        wanted -> WantedEquipment.copy(alpha = 0.22f)
         else -> MaterialTheme.colorScheme.surface
     }
     val content = when {
-        filled -> Color.White
+        filled -> lerp(FilledEquipment, MaterialTheme.colorScheme.onSurface, 0.4f)
         selected -> MaterialTheme.colorScheme.onPrimary
-        wanted -> MaterialTheme.colorScheme.onSurface
+        wanted -> lerp(WantedEquipment, MaterialTheme.colorScheme.onSurface, 0.55f)
         else -> MaterialTheme.colorScheme.onSurface
     }
     Surface(
@@ -434,12 +522,22 @@ private fun EquipmentChoice(
         shape = RoundedCornerShape(12.dp),
     ) {
         if (compact) {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 6.dp),
-                contentAlignment = Alignment.Center,
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                // The tint alone is soft; the check says "done" at a glance.
+                if (filled) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = "Popunjeno",
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,
@@ -460,7 +558,7 @@ private fun EquipmentChoice(
                     .size(if (compact) 20.dp else 28.dp)
                     .background(
                         color = if (filled) {
-                            Color.White.copy(alpha = 0.22f)
+                            FilledEquipment.copy(alpha = 0.24f)
                         } else {
                             Color.Transparent
                         },
@@ -487,11 +585,7 @@ private fun EquipmentChoice(
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = "Popunjeno",
-                        tint = if (filled || selected) {
-                            Color.White
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
+                        tint = content,
                         modifier = Modifier.size(if (compact) 14.dp else 18.dp),
                     )
                 }
@@ -561,17 +655,17 @@ private fun ChoiceRow(
                     .height(56.dp)
                     .clickable { onSelected(value) },
                 color = if (isSelected) {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.primaryContainer
                 } else {
                     MaterialTheme.colorScheme.surface
                 },
                 contentColor = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimary
+                    MaterialTheme.colorScheme.onPrimaryContainer
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 },
-                shadowElevation = 1.dp,
-                shape = MaterialTheme.shapes.medium,
+                border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
@@ -587,10 +681,15 @@ private fun ChoiceRow(
     Spacer(Modifier.height(10.dp))
 }
 
+/**
+ * Digits and backspace. [onSummary], when given, fills the free key under
+ * 7 with a button that opens the issuance summary.
+ */
 @Composable
 private fun NumericKeypad(
     modifier: Modifier = Modifier,
     keyHeight: Dp = 56.dp,
+    onSummary: (() -> Unit)? = null,
     onKey: (String) -> Unit,
 ) {
     val rows = listOf(
@@ -611,7 +710,36 @@ private fun NumericKeypad(
             ) {
                 row.forEach { key ->
                     if (key.isEmpty()) {
-                        Spacer(Modifier.weight(1f))
+                        if (onSummary == null) {
+                            Spacer(Modifier.weight(1f))
+                        } else {
+                            Surface(
+                                onClick = onSummary,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(keyHeight),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        ListIcon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = "Pregled",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                        }
                         return@forEach
                     }
                     Surface(
@@ -626,7 +754,6 @@ private fun NumericKeypad(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.outline,
                         ),
-                        shadowElevation = 1.dp,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (key == "⌫") {

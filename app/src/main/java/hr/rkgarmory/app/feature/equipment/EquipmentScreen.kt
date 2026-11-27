@@ -1,10 +1,12 @@
 package hr.rkgarmory.app.feature.equipment
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -21,47 +24,45 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.runtime.remember
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -69,6 +70,7 @@ import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.ui.BoxIcon
 import hr.rkgarmory.app.ui.EmptyState
 import hr.rkgarmory.app.ui.FilterChips
+import hr.rkgarmory.app.ui.ListActionBar
 import hr.rkgarmory.app.ui.SearchField
 import hr.rkgarmory.app.ui.StatusChip
 import hr.rkgarmory.app.ui.theme.StatusBroken
@@ -156,6 +158,7 @@ internal fun EquipmentScreen() {
                 }
             },
             onCancel = { editingId = null },
+            history = StaffSession.cachedReservations?.let { pieceHistory(editing, it) },
         )
         return
     }
@@ -229,6 +232,9 @@ internal fun EquipmentScreen() {
             }
         }
         HorizontalDivider()
+        if (phone) {
+            PhoneListBar(pieces = shown, onAdd = { creating = true })
+        }
         PullToRefreshBox(
             isRefreshing = viewModel.refreshing,
             onRefresh = { viewModel.reload() },
@@ -261,18 +267,6 @@ internal fun EquipmentScreen() {
                     modifier = Modifier.padding(16.dp),
                 )
             }
-            if (phone) {
-                ExtendedFloatingActionButton(
-                    onClick = { creating = true },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                    text = { Text("Dodaj opremu", fontWeight = FontWeight.SemiBold) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
         }
         if (pageAll && pageCount > 1) {
             PageBar(
@@ -284,7 +278,12 @@ internal fun EquipmentScreen() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * One filter on the phone as a chip with a menu, like [FilterChips]: 48dp,
+ * radius 12dp. While it shows everything (the first option, "Sve") it reads
+ * [label] on `surface` with an outline; once it filters it reads the picked
+ * value on `primaryContainer` with a check. The menu marks the picked one.
+ */
 @Composable
 private fun FilterSelect(
     label: String,
@@ -294,42 +293,87 @@ private fun FilterSelect(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = modifier,
-    ) {
-        OutlinedTextField(
-            value = options.firstOrNull { it.first == selected }?.second.orEmpty(),
-            onValueChange = {},
-            readOnly = true,
+    val value = options.firstOrNull { it.first == selected }?.second.orEmpty()
+    val active = selected != options.firstOrNull()?.first
+    Box(modifier = modifier) {
+        Surface(
+            onClick = { expanded = true },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-            label = { Text(label) },
-            trailingIcon = {
-                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
-            },
-            singleLine = true,
+                .height(48.dp)
+                .semantics {
+                    role = Role.DropdownList
+                    contentDescription = "$label: $value"
+                },
             shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                disabledContainerColor = MaterialTheme.colorScheme.surface,
-            ),
-        )
-        ExposedDropdownMenu(
+            color = if (active) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+            contentColor = if (active) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            border = if (active) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(start = if (active) 12.dp else 16.dp, end = 8.dp)
+                    .clearAndSetSemantics { },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (active) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(
+                    text = if (active) value else label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
+            }
+        }
+        DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(12.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             options.forEach { (id, text) ->
+                val picked = id == selected
                 DropdownMenuItem(
-                    text = { Text(text) },
+                    text = {
+                        Text(
+                            text = text,
+                            fontWeight = if (picked) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    },
                     onClick = {
                         onSelect(id)
                         expanded = false
                     },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    modifier = Modifier.semantics { this.selected = picked },
+                    trailingIcon = if (picked) {
+                        {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -395,9 +439,8 @@ private fun PieceTable(
 }
 
 /**
- * Phone list: a count line, then the pieces as rows of one rounded block.
- * Lazy, so a few hundred pieces scroll without pages. The bottom padding
- * keeps the last row clear of the "Dodaj opremu" button.
+ * Phone list: the pieces as rows of one rounded block. Lazy, so a few
+ * hundred pieces scroll without pages.
  */
 @Composable
 private fun PieceList(
@@ -405,21 +448,11 @@ private fun PieceList(
     state: LazyListState,
     onOpen: (String) -> Unit,
 ) {
-    val issued = pieces.count { it.status == StatusIssuedLabel }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         state = state,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
     ) {
-        // No key: piece ids are user-entered codes, so any string key could collide.
-        item {
-            Text(
-                text = "${pieces.size} ${pieceWord(pieces.size)} · $issued izdano",
-                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         itemsIndexed(pieces, key = { _, piece -> piece.id }) { index, piece ->
             val top = if (index == 0) 16.dp else 0.dp
             val bottom = if (index == pieces.lastIndex) 16.dp else 0.dp
@@ -435,6 +468,17 @@ private fun PieceList(
             }
         }
     }
+}
+
+/** Phone: how many pieces the filters show, and the add button. */
+@Composable
+private fun PhoneListBar(pieces: List<Piece>, onAdd: () -> Unit) {
+    val issued = pieces.count { it.status == StatusIssuedLabel }
+    ListActionBar(
+        countText = "${pieces.size} ${pieceWord(pieces.size)} · $issued izdano",
+        actionLabel = "Dodaj opremu",
+        onAction = onAdd,
+    )
 }
 
 private fun pieceWord(count: Int): String =

@@ -122,8 +122,12 @@ internal fun Reservation.listLabel(): String {
     return if (trip == null) userName else "$userName  $trip"
 }
 
-internal fun Reservation.excursionsWhileOutText(): String? =
-    excursionsWhileOut?.let { "Broj prijavljenih izleta: $it" }
+/** "1 izlet vani", "3 izleta vani"; null while the gear has been on no excursion. */
+internal fun Reservation.excursionsOutLabel(): String? {
+    val count = excursionsWhileOut?.takeIf { it > 0 } ?: return null
+    val word = if (count % 10 == 1 && count % 100 != 11) "izlet" else "izleta"
+    return "$count $word vani"
+}
 
 internal fun Reservation.openPieces(): List<Pair<String, ReservedPiece>> =
     equipmentKeys.mapNotNull { key ->

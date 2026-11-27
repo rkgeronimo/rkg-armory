@@ -19,9 +19,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -126,14 +126,15 @@ internal fun FormActions(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        OutlinedButton(
+        // Same family as the other actions in the app ("Zaduži", "+ Dodaj
+        // opremu"): tonal secondary action, filled main action, 48dp.
+        FilledTonalButton(
             onClick = onCancel,
             enabled = !saving,
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp),
-            shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             Text("Odustani", fontWeight = FontWeight.SemiBold)
@@ -143,8 +144,8 @@ internal fun FormActions(
             enabled = canSave || saving,
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp),
-            shape = RoundedCornerShape(14.dp),
+                .height(48.dp),
+            shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             if (saving) {

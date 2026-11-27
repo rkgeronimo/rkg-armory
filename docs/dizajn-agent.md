@@ -20,6 +20,18 @@ Status: `StatusChip` (`ui/StatusChip.kt`). Podloga je boja statusa na 16%, točk
 
 Označena stavka panela u tamnoj temi: `#334155`.
 
+Plohe (svijetla / tamna):
+
+| Uloga | Token | Hex |
+| --- | --- | --- |
+| Pozadina stranice | `surfaceVariant` | `#F3F6F8` / `#1E293B` |
+| Kartica, polje, tipka | `surface` | `#FFFFFF` / `#111827` |
+| Izbornik (`DropdownMenu`, `ExposedDropdownMenu`) | `surfaceContainer` | `#FFFFFF` / `#111827` |
+| Pretraga, dijalog, krug praznog popisa, oznake | `surfaceContainerHigh` | `#E9EFF4` / `#273449` |
+| Staza isključenog `Switch` | `surfaceContainerHighest` | `#E2E8F0` / `#334155` |
+
+Token kojeg nema u `Theme.kt` ostaje zadani M3 (ljubičasto-sivi). Prije upotrebe ga postavi u obje sheme.
+
 ## Font
 
 Plus Jakarta Sans u svim stilovima (`AppTypography` u `Theme.kt`). Jedan varijabilni file `res/font/plus_jakarta_sans.ttf`, težine 400, 500, 600 i 700. Licenca (OFL) je u `assets/licenses/`.
@@ -28,7 +40,7 @@ Plus Jakarta Sans u svim stilovima (`AppTypography` u `Theme.kt`). Jedan varijab
 
 - Naslov zaslona 26sp, semibold.
 - Dodir najmanje 48dp.
-- Polje i glavni gumb 56dp, radius 12dp. U obrascima (`FormActions`, polja Opreme i Rezervacije) 14dp.
+- Polje 56dp, radius 12dp. Gumbi obrasca (`FormActions`) 48dp, radius 12dp (vidi Gumbi).
 - Pretraga iznad popisa: `SearchField`, 56dp, pilula na `surfaceContainerHigh`, obrub samo u fokusu.
 - Filter: `FilterChips`, zasebni čipovi 48dp, radius 12dp, red se pomiče vodoravno. Označen: `primaryContainer` i kvačica. Ostali: `surface`, obrub 1dp `outline`. Uz `counts` broj stoji iza natpisa, svjetliji (na Rezervacijama: koliko ih po stanju odgovara pretrazi, i kad je 0).
 
@@ -62,7 +74,7 @@ Fotografija `login_bg.jpg` preko cijelog zaslona (portretni izrez u `res/drawabl
 - Na mobitelu u portretu nema gornje trake: izbornik računa je bijel u zaglavlju. Ostale ljuske zadržavaju svoju traku.
 - Dvije kartice sažetka (Izdavanje `IssueIcon`, Razduživanje `ReturnIcon`) prelaze donji rub zaglavlja. Pločica ikone je boja na 16%, ikona boja pomaknuta prema `onSurface`.
 - Odjeljak: naslov i „Sve“, pa kartica s najviše 6 redaka, grupirano po izletu („Bez izleta“). Više od 6: „Prikaži sve (N)“. Cijeli redak otvara zahtjev.
-- Redak: `Avatar` (`ui/Avatar.kt`), ime, strelica. Na Razduživanju `StatusChip` „N izlet/izleta vani“ kad je `excursionsWhileOut` > 0.
+- Redak: `Avatar` (`ui/Avatar.kt`), ime, strelica. Na Razduživanju `StatusChip` „N izlet/izleta vani“ (`excursionsOutLabel()`) kad je `excursionsWhileOut` > 0.
 
 `Avatar`: krug 40dp, inicijali (najviše dva). Boja iz popisa prema imenu, podloga 18%, tekst kao u `StatusChip`. TalkBack ga preskače, ime stoji pored.
 
@@ -71,6 +83,7 @@ Fotografija `login_bg.jpg` preko cijelog zaslona (portretni izrez u `res/drawabl
 Popis je grupiran po izletu („Bez izleta“), redoslijed kako dolazi sa servera. Jedna kartica po izletu, redak po članu, razdjelnik `outlineVariant`.
 
 - Izdavanje i Razduživanje: `RequestGroups` (`ui/RequestGroups.kt`). Naziv izleta iznad kartice. Redak najmanje 72dp: `Avatar`, ime, `FilledTonalButton` „Zaduži“ / „Razduži“ 48dp. Cijeli redak otvara zahtjev.
+- Izdavanje: između pretrage i popisa `ListActionBar` (vidi Gumbi): „N zahtjev/zahtjeva“ po pretrazi i „+ Novo izdavanje“ (izdavanje bez rezervacije). Okruglog gumba + ispod popisa nema.
 - Rezervacije na mobitelu: `LazyColumn`, `stickyHeader` s izletom i brojem na `surfaceVariant`. Redak: `Avatar`, ime, ispod šifre izdane opreme kao oznake (`FlowRow`, `surfaceContainerHigh`, radius 6dp) ili „Bez opreme“; desno `StatusChip` i donacija. Bez stranica.
 - Rezervacije na tabletu: tablica, 20 po stranici (`PageBar`).
 
@@ -84,12 +97,13 @@ Grupe Rezervacija (zaglavlje `stickyHeader` i kartica) i retci Opreme na mobitel
 
 ## Kućica
 
-Krug, isti na Izdavanju, Razduživanju i Opremi.
+Krug, isti na Izdavanju i Opremi.
 
 - Crtanje 28dp, dodir 48dp, oblik `extraLarge`.
 - Prazno: prozirna ispuna, obrub 1dp `outline`.
 - Označeno: ispuna `primary`, kvačica `onPrimary` 18dp.
-- Na plavom retku (Razduživanje): ispuna bijela 18% i obrub bijeli 75%.
+- Na plavom retku (označena oprema na Izdavanju): prozirna ispuna, obrub bijeli 75%.
+- Popunjena oprema na Izdavanju: ispuna `#1B7F4E` 24%, bez obruba, kvačica u boji teksta retka.
 
 Dodir kućice označava. Dodir ostatka reda radi svoju radnju.
 
@@ -101,11 +115,12 @@ Kartica tablice i sažetka: sjena 1dp i isti obrub. Kartica obrasca (`FormCard`)
 
 Popis u portretu je kartica, u pejzažu tablica.
 
-Sažetak na Izdavanju: kartica `surface`, zaglavlje u `primaryContainer`.
+Sažetak na Izdavanju: kartica `surface`, zaglavlje u `primaryContainer`. U portretu je u donjem listu (vidi Izdavanje u portretu).
 
 ## Oprema
 
-- Mobitel: `PieceList`, `LazyColumn` bez stranica. Gore broj („N komad/komada · X izdano“), pa jedan blok `surface`, prvi i zadnji redak zaobljeni 16dp, između razdjelnik `outlineVariant`. Dodavanje: `ExtendedFloatingActionButton` „Dodaj opremu“ dolje desno, `primary`.
+- Filtri Status i Vrsta: na tabletu dva reda `FilterChips`. Na mobitelu dva `FilterSelect` jedan do drugog, čip s izbornikom kao `FilterChips` (48dp, radius 12dp). Dok je „Sve“: naziv filtra, `surface`, obrub 1dp `outline`. Kad filtrira: odabrana vrijednost s kvačicom na `primaryContainer`. Desno strelica. Izbornik `DropdownMenu`, radius 12dp, `surfaceContainer`, odabrana stavka semibold s kvačicom (TalkBack čita označeno). TalkBack: padajući popis „Status: vrijednost“.
+- Mobitel: iznad popisa fiksna traka (`PhoneListBar`, `ListActionBar`): lijevo broj po filtrima („N komad/komada · X izdano“), desno `FilledTonalButton` „+ Dodaj opremu“ 48dp, radius 12dp. Bez FAB-a, da ne pokriva retke. Ispod `PieceList`, `LazyColumn` bez stranica: jedan blok `surface`, prvi i zadnji redak zaobljeni 16dp, između razdjelnik `outlineVariant`.
 - Tablet: gumb „Dodaj opremu“ uz pretragu, tablica 40 po stranici (`PageBar`).
 
 Redak Opreme na mobitelu (`PieceRow`), najmanje 64dp, cijeli redak otvara komad:
@@ -113,6 +128,8 @@ Redak Opreme na mobitelu (`PieceRow`), najmanje 64dp, cijeli redak otvara komad:
 1. lijevo `TypeTile`: 44dp, radius 12dp, `primaryContainer`, prva dva slova vrste velikim slovima. TalkBack ga preskače.
 2. sredina: šifra (`titleMedium`, semibold), „vrsta · vel. N“ sivo, zadužio/la i datum (samo Izdano) medium, napomena `bodySmall` sivo, najviše 2 retka
 3. desno `StatusChip`
+
+Otvoren komad (`EquipmentForm`, vidi Obrazac): zaglavlje, Stanje i Napomena, `FormActions`, ispod kartica „Povijest“ (tko ga je imao, po rezervaciji, najnovija gore).
 
 ## Tablica u pejzažu
 
@@ -129,20 +146,22 @@ Dijelovi su u `ui/FormParts.kt`. Obrazac je stupac kartica, razmak 12dp, rub 16d
 - `FormCard`: kartica `surface`, obrub 1dp `outlineVariant`, bez sjene, unutra 16dp.
 - `SectionLabel`: naslov skupine polja, `titleSmall` semibold `onSurfaceVariant`, 8dp ispod.
 - `ChoiceChip`: jedan izbor (stanje, vrsta, veličina, stanje vraćanja). Izgleda kao `FilterChips`: 48dp, radius 12dp, označen `primaryContainer` i kvačica, inače `surface` i obrub 1dp `outline`. TalkBack čita označeno. Dok se sprema je isključen.
-- Polje: `OutlinedTextField`, radius 14dp, podloga `surface`.
+- Polje: `OutlinedTextField`, radius 12dp, podloga `surface`.
 - `FormActions`: zadnji red obrasca, Odustani i Spremi jednake širine (vidi Gumbi).
 - Poruka greške ispod kartica, `error`, medium.
 
 Detalji:
 
-- Komad opreme (`EquipmentForm`): kartica zaglavlja (`TypeTile` 52dp, šifra `headlineSmall` bold, ispod „vrsta · vel. N“ sivo, desno `StatusPill`; kad je Izdano, ispod razdjelnika `Avatar` 32dp i „ime · datum“), pa kartica sa Stanjem (`ChoiceChip`) i Napomenom.
+- Komad opreme (`EquipmentForm`): kartica zaglavlja (`TypeTile` 52dp, šifra `headlineSmall` bold, ispod „vrsta · vel. N“ sivo, desno `StatusPill`; kad je Izdano, ispod razdjelnika `Avatar` 32dp i „ime · datum“), pa kartica sa Stanjem (`ChoiceChip`) i Napomenom, pa `FormActions`. Ispod kartica „Povijest“ (`HistoryCard`): rezervacije na kojima je komad bio (`pieceHistory`, iz `StaffSession.cachedReservations`, bez novog poziva), najnovija gore. Zaglavlje „Povijest“ `titleSmall` semibold `onSurfaceVariant`, desno „N rezervacija/rezervacije“. Redak najmanje 60dp, razdjelnik `outlineVariant`: `Avatar` 36dp, ime `bodyLarge` semibold, ispod „izlet · #id“ sivo (jedan red), desno `StatusChip` za taj komad: „Izgubljeno“, „Vraćeno“, „Izdano“, inače stanje rezervacije. TalkBack čita redak kao jednu stavku. Arhivirane i obrisane rezervacije server ne šalje, pa ih nema. Za olovo kartice nema (rezervacija čuva kilograme, ne šifru).
 - Novi komad (`EquipmentCreateForm`): kartica Vrsta, pa kartica Veličina, Šifra, Napomena. Promjena vrste briše veličinu.
 - Rezervacija (`ReservationForm`): kartica zaglavlja (`Avatar` 48dp, ime, izlet, desno `StatusChip` stanja), kartica „Oprema“ (redak po komadu, razdjelnik `outlineVariant`, stanje vraćanja kao `ChoiceChip`), kartica s Donacijom, Napomenom i retkom „Arhiviraj“. Arhiviraj: cijeli redak (najmanje 56dp) je prekidač (`toggleable`, `Role.Switch`), desno `Switch` bez vlastitog klika.
+- Razduživanje (`ReturnsScreen`): stupac kartica, najviše 720dp. Kartica zaglavlja (`Avatar` 48dp, ime, izlet, desno `StatusChip` `excursionsOutLabel()` kad je `excursionsWhileOut` > 0), pa jedna kartica-tablica bez sjene (`HeldPiecesCard`), da se i mnogo komada lako pregleda. Gore jednom nazivi stupaca (Oprema, Šifra, Vraćeno, Izgubljeno; `labelMedium` semibold `onSurfaceVariant`, „Izgubljeno“ `error`). Redak po komadu, najmanje 60dp, razdjelnik `outlineVariant`: naziv `bodyLarge` semibold (najviše 2 retka), ispod „vel. Y“ sivo; šifra kao oznaka (`surfaceContainerHigh`, radius 6dp); dva kruga oznake (`MarkCircle`) u stupcima 68dp. Nazivi stupaca su u jednom retku i s velikim fontom sustava se smanje da stanu (`BasicText` s `TextAutoSize.StepBased`), umjesto da se odrežu. Krug kao Kućica (crtanje 28dp, dodir 48dp, prazno obrub 1dp `outline`), označen: „Vraćeno“ `primary` s kvačicom `onPrimary`, „Izgubljeno“ `error` s križićem `onError`. Ponovni dodir označenog briše oznaku. TalkBack: potvrdni okvir „Vraćeno: naziv šifra“. Zadnji redak kartice je Donacija (polje 160dp, „€“). Ispod `FormActions`.
+- Izdavanje (`IssuanceScreen`, `IssuanceEditor`): za rezervaciju iznad urednika jedan redak člana (`IssuanceMember`: `Avatar` 36dp, ime `titleMedium` semibold, „ · izlet“ sivo, jedan red), za novo izdavanje bez rezervacije `UserPicker`. Popunjena oprema: `#1B7F4E` na 16%, tekst i kvačica ta boja pomaknuta prema `onSurface`, bez obruba (i u kompaktnom prikazu). Označena: `primary`. Tražena (`WantedEquipment`): `#E0A800` na 22%, tekst ta boja pomaknuta 55% prema `onSurface`, obrub 1dp `outline`, čita se u obje teme. Prednost: popunjena, označena, tražena. Veličina: gumbi 56dp, radius 12dp, označen `primaryContainer`, inače `surface` i obrub 1dp `outline`, bez sjene. Tipke i polje šifre bez sjene.
+- Izdavanje u portretu (`CompactIssuanceEditor`, i tablet u portretu): gore se pomiču čipovi opreme (tri u redu, 48dp). Dolje fiksno: polje šifre, veličina, tipkovnica (tipke 48dp) i `FormActions`, da nijedna tipka ne bude pod gumbima. Kad je editor niži od 600dp (mali mobitel, otvorena tipkovnica), polje, veličina i tipkovnica prelaze u pomični dio ispod čipova, fiksni ostaje samo `FormActions`. Sažetak nije na zaslonu: slobodna tipka ispod 7 je „Pregled“ (`primaryContainer`, `ListIcon` 20dp i tekst `labelLarge` semibold) i otvara `SummarySheet`, `ModalBottomSheet` bez djelomičnog stanja, podloga `surfaceVariant`, naslov „Pregled opreme“ (`titleMedium` semibold) i desno `TextButton` „Zatvori“, ispod sažetak. Zatvara se i povlačenjem dolje, dodirom izvan lista i tipkom Natrag. U pejzažu (`WideIssuanceEditor`) oprema je lijevo 320dp, desno polje, veličina i tipke 56dp pa sažetak. Pomiče se sve osim `FormActions`.
 - Izdavanje, Razduživanje i Popis inventure imaju isti `FormActions`.
 
 ## Gumbi
 
-- **Odustani**: `OutlinedButton`, obrub 1dp `outline`, u `FormActions`. Odbacuje izmjenu, isključen dok se sprema.
-- **Spremi** (na Izdavanju „Izdaj opremu“): `Button` `primary`, u `FormActions`. Siv (zadana isključena boja) dok nema izmjene ili obrazac nije valjan, kružić `onPrimary` dok se sprema. Oba 56dp, radius 14dp.
-- **Vraćeno**: `primary`.
-- **Briši**: `error`, vidljiv tek kad je bar jedna kućica označena.
+- **Odustani**: `FilledTonalButton`, u `FormActions`. Odbacuje izmjenu, isključen dok se sprema.
+- **Spremi** (na Izdavanju „Izdaj opremu“): `Button` `primary`, u `FormActions`. Siv (zadana isključena boja) dok nema izmjene ili obrazac nije valjan, kružić `onPrimary` dok se sprema. Oba 48dp, radius 12dp.
+- **Dodaj** iznad popisa: `ListActionBar` (`ui/ListActionBar.kt`), fiksna traka iznad popisa: lijevo broj redaka sivo (`bodyMedium`), desno `FilledTonalButton` „+ natpis“ 48dp, radius 12dp. Na Opremi (mobitel) i Izdavanju. Ne pokriva retke, zato nema FAB-a ni okruglog gumba +.

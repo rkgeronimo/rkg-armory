@@ -172,7 +172,7 @@ internal fun ReservationForm(
                                 .height(56.dp),
                             placeholder = { Text(if (key == "lead") "Kg" else "Šifra") },
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = fieldColors,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Characters,
@@ -264,7 +264,7 @@ internal fun ReservationForm(
                     modifier = Modifier.width(200.dp),
                     singleLine = true,
                     suffix = { Text("€") },
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = fieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 )
@@ -276,7 +276,7 @@ internal fun ReservationForm(
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = fieldColors,
                 )
                 HorizontalDivider(

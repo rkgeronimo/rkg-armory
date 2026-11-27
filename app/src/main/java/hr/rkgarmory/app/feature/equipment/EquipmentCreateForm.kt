@@ -127,7 +127,7 @@ internal fun EquipmentCreateForm(
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = fieldColors,
                 )
                 Spacer(Modifier.height(20.dp))
@@ -139,7 +139,7 @@ internal fun EquipmentCreateForm(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = fieldColors,
                 )
                 Spacer(Modifier.height(20.dp))
@@ -150,7 +150,7 @@ internal fun EquipmentCreateForm(
                     enabled = !saving,
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = fieldColors,
                 )
             }

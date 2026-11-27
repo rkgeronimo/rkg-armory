@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hr.rkgarmory.app.R
 import hr.rkgarmory.app.remote.Reservation
+import hr.rkgarmory.app.remote.excursionsOutLabel
 import hr.rkgarmory.app.ui.Avatar
 import hr.rkgarmory.app.ui.IssueIcon
 import hr.rkgarmory.app.ui.ReturnIcon
@@ -430,10 +431,8 @@ private fun RequestRow(
 /** Excursions the member signed up for while the gear is out; nothing when none. */
 @Composable
 private fun ExcursionsOut(reservation: Reservation) {
-    val count = reservation.excursionsWhileOut?.takeIf { it > 0 } ?: return
-    val word = if (count % 10 == 1 && count % 100 != 11) "izlet" else "izleta"
     StatusChip(
-        text = "$count $word vani",
+        text = reservation.excursionsOutLabel() ?: return,
         color = StatusIssued,
         modifier = Modifier.padding(start = 8.dp),
     )

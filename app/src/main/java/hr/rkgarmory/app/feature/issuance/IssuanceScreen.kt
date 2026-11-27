@@ -3,28 +3,24 @@ package hr.rkgarmory.app.feature.issuance
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -33,6 +29,7 @@ import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,13 +39,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hr.rkgarmory.app.remote.Reservation
 import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.remote.StaffUser
+import hr.rkgarmory.app.ui.Avatar
 import hr.rkgarmory.app.ui.EmptyState
 import hr.rkgarmory.app.ui.IssueIcon
+import hr.rkgarmory.app.ui.ListActionBar
 import hr.rkgarmory.app.ui.RequestGroups
 import hr.rkgarmory.app.ui.SearchField
 
@@ -136,6 +138,19 @@ internal fun IssuanceScreen(openId: Long? = null) {
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 )
+                ListActionBar(
+                    countText = "${filtered.size} ${requestWord(filtered.size)}",
+                    actionLabel = "Novo izdavanje",
+                    onAction = {
+                        issuanceViewModel.clearAll()
+                        pickedId = null
+                        walkIn = true
+                        walkInUserId = null
+                        opened = true
+                        selectedEquipment = loanEquipmentTypes.first()
+                    },
+                    modifier = Modifier.widthIn(max = 720.dp),
+                )
                 PullToRefreshBox(
                     isRefreshing = issuanceViewModel.refreshing,
                     onRefresh = {
@@ -176,33 +191,6 @@ internal fun IssuanceScreen(openId: Long? = null) {
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Button(
-                        onClick = {
-                            issuanceViewModel.clearAll()
-                            pickedId = null
-                            walkIn = true
-                            walkInUserId = null
-                            opened = true
-                            selectedEquipment = loanEquipmentTypes.first()
-                        },
-                        modifier = Modifier.size(72.dp),
-                        shape = CircleShape,
-                        contentPadding = PaddingValues(0.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp),
-                    ) {
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Novo izdavanje",
-                            modifier = Modifier.size(36.dp),
-                        )
-                    }
-                }
             }
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -214,6 +202,11 @@ internal fun IssuanceScreen(openId: Long? = null) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                } else if (selected != null) {
+                    IssuanceMember(
+                        reservation = selected,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
                     )
                 }
                 IssuanceEditor(
@@ -330,3 +323,36 @@ private fun UserPicker(
         }
     }
 }
+
+/** Who the gear is issued to: one slim line above the editor, to leave the keypad room. */
+@Composable
+private fun IssuanceMember(reservation: Reservation, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Avatar(reservation.userName, size = 36.dp)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = reservation.userName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        val trip = reservation.excursion?.takeIf { it.isNotBlank() }
+        if (trip != null) {
+            Text(
+                text = " · $trip",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private fun requestWord(count: Int): String =
+    if (count % 10 == 1 && count % 100 != 11) "zahtjev" else "zahtjeva"
