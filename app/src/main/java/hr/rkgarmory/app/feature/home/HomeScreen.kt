@@ -10,14 +10,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -34,20 +38,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,8 +77,11 @@ import java.util.Locale
 private val CardOverlap = 36.dp
 private const val HomeRowLimit = 6
 
+/** Scroll over which the navy behind the status bar fades in, well before the header is gone. */
+private val StatusBarScrimDistance = 96.dp
+
 /**
- * Header with the club logo, a greeting and the date; two summary cards
+ * Header with the club logo, the club motto and the date; two summary cards
  * over its lower edge; the waiting issuances and returns, grouped by
  * excursion. [accountMenu] sits in the header where the shell has no top
  * bar (phone).
@@ -96,15 +105,27 @@ internal fun HomeScreen(
         viewModel.open()
     }
 
+    val refreshState = rememberPullToRefreshState()
+    val scroll = rememberScrollState()
     PullToRefreshBox(
         isRefreshing = viewModel.refreshing,
         onRefresh = viewModel::reload,
         modifier = Modifier.fillMaxSize(),
+        state = refreshState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = refreshState,
+                isRefreshing = viewModel.refreshing,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .windowInsetsPadding(WindowInsets.statusBars),
+            )
+        },
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scroll),
         ) {
             Box {
                 Column {
@@ -181,62 +202,93 @@ internal fun HomeScreen(
                 }
             }
         }
+        // Zero height when the shell already keeps content below the status bar.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsTopHeight(WindowInsets.statusBars)
+                .graphicsLayer { alpha = (scroll.value / StatusBarScrimDistance.toPx()).coerceIn(0f, 1f) }
+                .background(HomeHeader),
+        )
     }
 }
 
 @Composable
 private fun HomeHero(accountMenu: (@Composable () -> Unit)?) {
     val now = LocalDateTime.now()
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(HomeHeader)
-            .clipToBounds()
-            .drawBehind {
-                // Faint ring off the top right corner, as in the mockup.
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.06f),
-                    radius = 96.dp.toPx(),
-                    center = Offset(size.width - 50.dp.toPx(), 60.dp.toPx()),
-                    style = Stroke(width = 28.dp.toPx()),
-                )
-            }
-            .padding(start = 20.dp, end = 8.dp, top = 16.dp, bottom = 24.dp + CardOverlap),
+            .clipToBounds(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(R.drawable.logo_blue),
-                contentDescription = "Ronilački klub Geronimo",
-                modifier = Modifier.size(56.dp),
-                colorFilter = ColorFilter.tint(Color.White),
-            )
-            Spacer(Modifier.weight(1f))
-            if (accountMenu != null) {
-                CompositionLocalProvider(LocalContentColor provides Color.White) {
-                    accountMenu()
+        // The underwater photo of the sign-in screen, cut to a band
+        // (`home_header`), under a navy veil.
+        Image(
+            painter = painterResource(R.drawable.home_header),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(HeroVeil),
+        )
+        Column(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(
+                    start = 20.dp,
+                    end = 8.dp,
+                    top = 16.dp,
+                    bottom = 24.dp + CardOverlap,
+                ),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.logo_blue),
+                    contentDescription = "Ronilački klub Geronimo",
+                    modifier = Modifier.size(56.dp),
+                    colorFilter = ColorFilter.tint(Color.White),
+                )
+                Spacer(Modifier.weight(1f))
+                if (accountMenu != null) {
+                    CompositionLocalProvider(LocalContentColor provides Color.White) {
+                        accountMenu()
+                    }
                 }
             }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = ClubMotto,
+                color = Color.White,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = dateLine(now),
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = greeting(now.hour),
-            color = Color.White,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = dateLine(now),
-            color = Color.White.copy(alpha = 0.8f),
-            style = MaterialTheme.typography.bodyMedium,
-        )
     }
 }
 
-private fun greeting(hour: Int): String = when (hour) {
-    in 5..10 -> "Dobro jutro"
-    in 11..17 -> "Dobar dan"
-    else -> "Dobra večer"
-}
+/**
+ * Navy over the header photo: darker at the top edge under the white
+ * status bar icons, lightest in the upper middle, darker under the motto
+ * and the summary cards so white text stays readable.
+ */
+private val HeroVeil = Brush.verticalGradient(
+    0f to HomeHeader.copy(alpha = 0.75f),
+    0.3f to HomeHeader.copy(alpha = 0.55f),
+    0.7f to HomeHeader.copy(alpha = 0.82f),
+    1f to HomeHeader.copy(alpha = 0.92f),
+)
+
+/** The club motto, the headline of the Home header. */
+private const val ClubMotto = "Nevrijeme je naše vrijeme"
 
 private val dateFormat = DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale.forLanguageTag("hr"))
 

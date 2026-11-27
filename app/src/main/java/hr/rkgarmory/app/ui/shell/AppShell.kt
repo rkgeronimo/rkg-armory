@@ -9,8 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -91,7 +95,7 @@ internal fun AppShell(
         selected = destination
     }
 
-    // Home on a phone has a navy header; the status bar above it takes the same colour.
+    // Home on a phone draws its header photo behind the status bar.
     val homeHeaderOnTop = phone && isPortrait && selected == Destination.Home
     SystemBarIcons(
         darkBehindStatusBar = darkTheme || homeHeaderOnTop,
@@ -108,7 +112,17 @@ internal fun AppShell(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding(),
+                .then(
+                    if (homeHeaderOnTop) {
+                        Modifier.windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                            ),
+                        )
+                    } else {
+                        Modifier.safeDrawingPadding()
+                    },
+                ),
         ) {
             if (phone && isPortrait) {
                 BottomBarShell(

@@ -56,7 +56,7 @@ Tablet u pejzažu: panel fiksno lijevo, 220dp. Tablet u portretu i mobitel u pej
 
 Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. Na mobitelu bez Inventure. Stavka panela 72dp. Dno panela: Tema, Odjava, 48dp. Označena stavka je svjetlija ploha.
 
-Statusna traka: `AppShell` crta ispod nje traku `HomeHeader` dok je Početna na mobitelu u portretu, inače `surface`. Boju ikona postavlja `SystemBarIcons` (`ui/SystemBars.kt`): svijetle u tamnoj temi i iznad `HomeHeader`, inače tamne. Ikone navigacijske trake prate temu. Prijava: gore tamne ikone (svijetla voda), dolje prema listu (portret) ili tamnoj fotografiji (pejzaž).
+Statusna traka: ispod nje je traka `surface`. Iznimka je Početna na mobitelu u portretu: tamo `AppShell` ne odmiče sadržaj od statusne trake (samo bočni i donji inseti), pa se fotografija zaglavlja nastavlja iza nje. `HomeHero` sam dodaje razmak statusne trake (`windowInsetsPadding(statusBars)`, na ostalim ljuskama 0 jer ga je ljuska već potrošila). Kad se sadržaj pomakne, iza statusne trake se pojavi `HomeHeader` (pun nakon 96dp skrolanja), da ispod bijelih ikona ne prolaze bijele kartice. Indikator povlačenja za osvježavanje je ispod statusne trake. Boju ikona postavlja `SystemBarIcons` (`ui/SystemBars.kt`): svijetle u tamnoj temi i iznad `HomeHeader`, inače tamne. Ikone navigacijske trake prate temu. Prijava: gore tamne ikone (svijetla voda), dolje prema listu (portret) ili tamnoj fotografiji (pejzaž).
 
 Promjena odredišta: `Crossfade` 180 ms u `ShellContent`. Gornja traka i statusna traka mijenjaju se odmah.
 
@@ -70,7 +70,7 @@ Fotografija `login_bg.jpg` preko cijelog zaslona (portretni izrez u `res/drawabl
 
 ## Početna
 
-- Zaglavlje: `HomeHeader` (`#0B3A5C`), isto u obje teme. Logo bijeli, pozdrav (Dobro jutro / Dobar dan / Dobra večer) bijeli bold, ispod datum („Petak, 27. studenoga“) bijeli 80%. Iza sadržaja, uz gornji desni kut, blijedi bijeli prsten (bijelo 6%, polumjer 96dp, debljina 28dp, središte 50dp od desnog i 60dp od gornjeg ruba), odrezan na rub zaglavlja (`drawBehind` + `clipToBounds`).
+- Zaglavlje: `HomeHeader` (`#0B3A5C`), isto u obje teme. Logo bijeli, moto kluba „Nevrijeme je naše vrijeme“ (`ClubMotto`, `headlineSmall`) bijeli bold, ispod datum („Petak, 27. studenoga“) bijeli 80%. Pozadina je podvodna fotografija s Prijave, izrezana u traku (`home_header.jpg`: `drawable-nodpi` 1080×730 za mobitel, `drawable-land-nodpi` i `drawable-sw600dp-nodpi` 1920×600 za široke zaslone), `ContentScale.Crop`. Preko nje tamnoplavi veo (`HeroVeil`, okomiti gradijent `HomeHeader`): 75% na vrhu (iza statusne trake, ispod bijelih ikona), 55% na 30%, 82% na 70%, 92% na dnu ispod kartica. Ne koristiti cijeli `login_bg` (1080×2424), da se na svakom ulasku na Početnu ne dekodira velika slika.
 - Na mobitelu u portretu nema gornje trake: izbornik računa je bijel u zaglavlju. Ostale ljuske zadržavaju svoju traku.
 - Dvije kartice sažetka (Izdavanje `IssueIcon`, Razduživanje `ReturnIcon`) prelaze donji rub zaglavlja. Pločica ikone je boja na 16%, ikona boja pomaknuta prema `onSurface`.
 - Odjeljak: naslov i „Sve“, pa kartica s najviše 6 redaka, grupirano po izletu („Bez izleta“). Više od 6: „Prikaži sve (N)“. Cijeli redak otvara zahtjev.
