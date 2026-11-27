@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,7 +30,8 @@ import androidx.compose.ui.unit.dp
 /**
  * One choice out of [options] (id to label), as separate chips in a row
  * that scrolls sideways. Picking one of the last two scrolls to the end so
- * the selected chip is not left cut off.
+ * the selected chip is not left cut off. [counts] by id, when given, follow
+ * the label in a lighter weight.
  */
 @Composable
 internal fun FilterChips(
@@ -37,6 +39,7 @@ internal fun FilterChips(
     selected: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    counts: Map<String, Int> = emptyMap(),
 ) {
     val scroll = rememberScrollState()
     LaunchedEffect(selected) {
@@ -89,6 +92,16 @@ internal fun FilterChips(
                         maxLines = 1,
                         softWrap = false,
                     )
+                    counts[id]?.let { count ->
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = count.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = LocalContentColor.current.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
             }
         }

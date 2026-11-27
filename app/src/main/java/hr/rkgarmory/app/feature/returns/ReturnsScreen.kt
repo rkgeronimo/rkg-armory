@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,6 +62,7 @@ import hr.rkgarmory.app.remote.StaffSession
 import hr.rkgarmory.app.remote.excursionsWhileOutText
 import hr.rkgarmory.app.remote.openPieces
 import hr.rkgarmory.app.remote.pieceTitle
+import hr.rkgarmory.app.ui.RequestGroups
 import hr.rkgarmory.app.ui.SearchField
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -176,64 +176,20 @@ internal fun ReturnsScreen(openId: Long? = null) {
                             )
                         }
                     } else {
-                        Column(
+                        RequestGroups(
+                            reservations = filtered,
+                            action = "Razduži",
+                            onOpen = { reservation ->
+                                pick(reservation)
+                                opened = true
+                            },
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .widthIn(max = 720.dp)
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
                                 .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            filtered.forEach { reservation ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                    ),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .heightIn(min = 96.dp)
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = reservation.userName,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
-                                            val trip = reservation.excursion?.takeIf { it.isNotBlank() }
-                                            if (trip != null) {
-                                                Spacer(Modifier.height(4.dp))
-                                                Text(
-                                                    text = trip,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                )
-                                            }
-                                        }
-                                        Spacer(Modifier.width(12.dp))
-                                        Button(
-                                            onClick = {
-                                                pick(reservation)
-                                                opened = true
-                                            },
-                                            modifier = Modifier.height(48.dp),
-                                            shape = RoundedCornerShape(12.dp),
-                                        ) {
-                                            Text("Razduživanje")
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        )
                     }
                 }
             }

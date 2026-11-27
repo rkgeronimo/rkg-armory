@@ -31,7 +31,7 @@ Plus Jakarta Sans u svim stilovima (`AppTypography` u `Theme.kt`). Jedan varijab
 - Dodir najmanje 48dp.
 - Polje i glavni gumb 56dp, radius 12dp.
 - Pretraga iznad popisa: `SearchField`, 56dp, pilula na `surfaceContainerHigh`, obrub samo u fokusu.
-- Filter: `FilterChips`, zasebni čipovi 48dp, radius 12dp, red se pomiče vodoravno. Označen: `primaryContainer` i kvačica. Ostali: `surface`, obrub 1dp `outline`.
+- Filter: `FilterChips`, zasebni čipovi 48dp, radius 12dp, red se pomiče vodoravno. Označen: `primaryContainer` i kvačica. Ostali: `surface`, obrub 1dp `outline`. Uz `counts` broj stoji iza natpisa, svjetliji (na Rezervacijama: koliko ih po stanju odgovara pretrazi, i kad je 0).
 
 Popis se osvježava povlačenjem prema dolje (`PullToRefreshBox`), i na Početnoj. Gumba Osvježi nema.
 
@@ -54,6 +54,14 @@ Redoslijed: Početna, Izdavanje, Razduživanje, Rezervacije, Oprema, Inventura. 
 - Redak: `Avatar` (`ui/Avatar.kt`), ime, strelica. Na Razduživanju `StatusChip` „N izlet/izleta vani“ kad je `excursionsWhileOut` > 0.
 
 `Avatar`: krug 40dp, inicijali (najviše dva). Boja iz popisa prema imenu, podloga 18%, tekst kao u `StatusChip`. TalkBack ga preskače, ime stoji pored.
+
+## Izdavanje, Razduživanje, Rezervacije
+
+Popis je grupiran po izletu („Bez izleta“), redoslijed kako dolazi sa servera. Jedna kartica po izletu, redak po članu, razdjelnik `outlineVariant`.
+
+- Izdavanje i Razduživanje: `RequestGroups` (`ui/RequestGroups.kt`). Naziv izleta iznad kartice. Redak najmanje 72dp: `Avatar`, ime, `FilledTonalButton` „Zaduži“ / „Razduži“ 48dp. Cijeli redak otvara zahtjev.
+- Rezervacije na mobitelu: `LazyColumn`, `stickyHeader` s izletom i brojem na `surfaceVariant`. Redak: `Avatar`, ime, ispod šifre izdane opreme kao oznake (`FlowRow`, `surfaceContainerHigh`, radius 6dp) ili „Bez opreme“; desno `StatusChip` i donacija. Bez stranica.
+- Rezervacije na tabletu: tablica, 20 po stranici (`PageBar`).
 
 ## Kućica
 
